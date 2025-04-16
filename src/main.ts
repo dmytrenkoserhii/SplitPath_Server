@@ -19,8 +19,8 @@ async function bootstrap() {
 
   app.enableCors({
     origin: configService.get(ENV.CORS_ORIGIN, true),
-    methods: 'GET, HEAD, POST, PUT, PATCH, DELETE',
-    allowedHeaders: configService.get(ENV.CORS_HEADERS, 'Content-Type, Accept, Authorization'),
+    methods: configService.get(ENV.CORS_METHODS, 'GET,HEAD,POST,PUT,PATCH,DELETE'),
+    allowedHeaders: configService.get(ENV.CORS_HEADERS, 'Content-Type,Accept,Authorization'),
     credentials: configService.get(ENV.CORS_CREDENTIALS, true),
   });
 

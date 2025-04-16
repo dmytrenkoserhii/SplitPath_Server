@@ -12,6 +12,7 @@ export const ENV_VALIDATION = Joi.object({
   [ENV.CORS_ORIGIN]: Joi.string().required(),
   [ENV.CORS_HEADERS]: Joi.string().required(),
   [ENV.CORS_CREDENTIALS]: Joi.boolean().required(),
+  [ENV.CORS_METHODS]: Joi.string().required(),
 
   [ENV.DATABASE_URL]: Joi.string().required(),
 });
