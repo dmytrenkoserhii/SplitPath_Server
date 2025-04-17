@@ -2,7 +2,7 @@ import * as Joi from 'joi';
 
 import { ENV } from '../enums';
 
-export const ENV_VALIDATION = Joi.object({
+export const ENV_VALIDATION = {
   [ENV.PORT]: Joi.number(),
 
   [ENV.IS_PRODUCTION]: Joi.boolean().required(),
@@ -15,4 +15,4 @@ export const ENV_VALIDATION = Joi.object({
   [ENV.CORS_METHODS]: Joi.string().required(),
 
   [ENV.DATABASE_URL]: Joi.string().required(),
-});
+};
