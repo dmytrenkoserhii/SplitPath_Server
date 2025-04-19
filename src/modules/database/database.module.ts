@@ -1,3 +1,5 @@
+import { join } from 'path';
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -14,7 +16,7 @@ import { ENV } from '@/shared/enums';
         url: configService.get<string>(ENV.DATABASE_URL),
         autoLoadEntities: true,
         synchronize: false,
-        migrations: [__dirname, '/migrations/**/*{.ts,.js}'],
+        migrations: [join(__dirname, '..', '..', 'migrations', '**', '*{.ts,.js}')],
       }),
     }),
   ],
