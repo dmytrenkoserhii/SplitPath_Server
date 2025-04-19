@@ -15,28 +15,28 @@ export class UsersController {
   @ApiOperation({ summary: 'Find all users' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return all users', type: [User] })
   @Get()
-  public getUsers(): Promise<User[]> {
+  public findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
 
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return current user', type: User })
   @Get(':id')
-  public async getCurrentUser(@Param('id') id: number): Promise<User | null> {
+  public async findOneById(@Param('id') id: number): Promise<User> {
     return this.usersService.findOneById(id);
   }
 
   @ApiOperation({ summary: 'Create new user' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'User created successfully', type: User })
   @Post()
-  public async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
+  public async create(@Body() createUserDto: CreateUserDto): Promise<User> {
     return this.usersService.create(createUserDto);
   }
 
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User updated successfully', type: User })
   @Patch(':id')
-  public async updateUser(
+  public async update(
     @Param('id') id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<User> {
@@ -46,7 +46,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User deleted successfully' })
   @Delete(':id')
-  public async deleteUser(@Param('id') id: number): Promise<DeleteResult> {
+  public async delete(@Param('id') id: number): Promise<DeleteResult> {
     return this.usersService.deleteById(id);
   }
 }
