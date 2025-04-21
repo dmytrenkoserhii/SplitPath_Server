@@ -26,6 +26,13 @@ export class UsersController {
     return this.usersService.findOneById(id);
   }
 
+  @ApiOperation({ summary: 'Get user by id' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return user by id', type: User })
+  @Get(':id')
+  public async findOneById(@Param('id') id: number): Promise<User> {
+    return this.usersService.findOneById(id);
+  }
+
   @ApiOperation({ summary: 'Find user by email' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return user by email', type: User })
   @Get('email/:email')
