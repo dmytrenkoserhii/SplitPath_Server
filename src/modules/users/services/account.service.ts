@@ -13,10 +13,14 @@ export class AccountService {
     private accountRepository: Repository<Account>,
   ) {}
 
-  public async findOneById(id: number): Promise<Account | null> {
-    return this.accountRepository.findOne({
-      where: { id },
-    });
+  public async findOneById(id: number): Promise<Account> {
+    const account = await this.accountRepository.findOne({ where: { id } });
+
+    if (!account) {
+      throw new NotFoundException(`Account with ID ${id} not found`);
+    }
+
+    return account;
   }
 
   public async create(createAccountDto: CreateAccountDto, user: User): Promise<Account> {
@@ -29,13 +33,7 @@ export class AccountService {
   }
 
   public async update(id: number, updateAccountDto: UpdateAccountDto): Promise<Account> {
-    const account = await this.accountRepository.findOne({
-      where: { id },
-    });
-
-    if (!account) {
-      throw new NotFoundException(`Account with ID ${id} not found`);
-    }
+    const account = await this.findOneById(id);
 
     Object.assign(account, updateAccountDto);
 

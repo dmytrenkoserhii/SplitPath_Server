@@ -20,7 +20,7 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  public async findOneById(id: number, fieldsToInclude: string[] = ['id', 'email']): Promise<User> {
+  public async findOneById(id: number, fieldsToInclude: string[] = []): Promise<User> {
     let query = this.usersRepository.createQueryBuilder('user').where('user.id = :id', { id });
 
     fieldsToInclude.forEach((field) => {
@@ -35,10 +35,7 @@ export class UsersService {
     return user;
   }
 
-  public async findOneByEmail(
-    email: string,
-    fieldsToInclude: string[] = ['id', 'email'],
-  ): Promise<User> {
+  public async findOneByEmail(email: string, fieldsToInclude: string[] = []): Promise<User> {
     let query = this.usersRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email });
@@ -82,6 +79,7 @@ export class UsersService {
   }
 
   public async deleteById(id: number): Promise<DeleteResult> {
-    return this.usersRepository.delete(id);
+    const user = await this.findOneById(id);
+    return this.usersRepository.delete(user.id);
   }
 }
