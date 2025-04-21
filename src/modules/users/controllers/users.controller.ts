@@ -22,8 +22,15 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return current user', type: User })
   @Get(':id')
-  public async findOneById(@Param('id') id: number): Promise<User> {
+  public async getCurrent(@Param('id') id: number): Promise<User> {
     return this.usersService.findOneById(id);
+  }
+
+  @ApiOperation({ summary: 'Find user by email' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return user by email', type: User })
+  @Get('email/:email')
+  public async findOneByEmail(@Param('email') email: string): Promise<User> {
+    return this.usersService.findOneByEmail(email);
   }
 
   @ApiOperation({ summary: 'Create new user' })

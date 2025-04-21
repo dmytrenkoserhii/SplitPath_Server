@@ -8,6 +8,8 @@ import { CreateUserDto, UpdateUserDto } from '../dtos';
 import { User } from '../entities';
 import { AccountService } from './account.service';
 
+type UserField = keyof User;
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -20,7 +22,7 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  public async findOneById(id: number, fieldsToInclude: string[] = []): Promise<User> {
+  public async findOneById(id: number, fieldsToInclude: UserField[] = []): Promise<User> {
     let query = this.usersRepository.createQueryBuilder('user').where('user.id = :id', { id });
 
     fieldsToInclude.forEach((field) => {
@@ -35,7 +37,7 @@ export class UsersService {
     return user;
   }
 
-  public async findOneByEmail(email: string, fieldsToInclude: string[] = []): Promise<User> {
+  public async findOneByEmail(email: string, fieldsToInclude: UserField[] = []): Promise<User> {
     let query = this.usersRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email });
