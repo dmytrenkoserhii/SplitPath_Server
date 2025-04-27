@@ -3,10 +3,13 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { Story } from '@/modules/stories/entities/story.entity';
 
 import { Role } from '../enums';
 import { Account } from './account.entity';
@@ -37,6 +40,9 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Story, (story) => story.user)
+  stories: Story[];
 
   @OneToOne(() => Account, (account) => account.user, { cascade: true })
   @JoinColumn()
