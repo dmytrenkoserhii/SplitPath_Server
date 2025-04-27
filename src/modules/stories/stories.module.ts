@@ -9,6 +9,5 @@ import { StoriesService, StorySegmentsService, StoryTopicsService } from './serv
   imports: [TypeOrmModule.forFeature([Story, StorySegment, StoryTopic])],
   controllers: [StoriesController, StoryTopicsController],
   providers: [StoriesService, StorySegmentsService, StoryTopicsService],
-  exports: [StoriesService, StorySegmentsService, StoryTopicsService],
 })
 export class StoriesModule {}

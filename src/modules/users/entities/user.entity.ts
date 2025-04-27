@@ -42,7 +42,6 @@ export class User {
   updatedAt: Date;
 
   @OneToMany(() => Story, (story) => story.user)
-  @JoinColumn({ name: 'stories' })
   stories: Story[];
 
   @OneToOne(() => Account, (account) => account.user, { cascade: true })

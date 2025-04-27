@@ -25,11 +25,8 @@ export class StorySegment {
   selectedChoice: string | null;
 
   @ManyToOne(() => Story, (story) => story.segments)
-  @JoinColumn({ name: 'storyId' })
+  @JoinColumn()
   story: Story;
-
-  @Column()
-  storyId: number;
 
   @CreateDateColumn()
   createdAt: Date;

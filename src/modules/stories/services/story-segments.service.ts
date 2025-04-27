@@ -7,8 +7,6 @@ import { CreateStorySegmentDto, UpdateStorySegmentDto } from '../dtos';
 import { StorySegment } from '../entities';
 import { StoriesService } from './stories.service';
 
-// To verify story existence
-
 @Injectable()
 export class StorySegmentsService {
   constructor(
@@ -26,15 +24,6 @@ export class StorySegmentsService {
     });
 
     return this.segmentRepository.save(newSegment);
-  }
-
-  async findAllByStoryId(storyId: number): Promise<StorySegment[]> {
-    await this.storiesService.findOneById(storyId);
-
-    return this.segmentRepository.find({
-      where: { storyId: storyId },
-      order: { createdAt: 'ASC' },
-    });
   }
 
   async findOneById(segmentId: number): Promise<StorySegment> {
@@ -58,11 +47,7 @@ export class StorySegmentsService {
   }
 
   async remove(segmentId: number): Promise<DeleteResult> {
-    const segment = await this.findOneById(segmentId);
-
-    if (!segment) {
-      throw new NotFoundException(`StorySegment with ID "${segmentId}" not found`);
-    }
+    await this.findOneById(segmentId);
 
     return this.segmentRepository.delete(segmentId);
   }

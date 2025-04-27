@@ -5,7 +5,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -32,14 +31,11 @@ export class Story {
   status: StoryStatus;
 
   @ManyToOne(() => User, (user) => user.stories)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn()
   user: User;
 
-  @OneToOne(() => StoryTopic, (topic) => topic.story, {
-    cascade: true,
-    eager: true,
-  })
-  @JoinColumn({ name: 'topicId' })
+  @ManyToOne(() => StoryTopic, (topic) => topic.stories)
+  @JoinColumn()
   storyTopic: StoryTopic;
 
   @OneToMany(() => StorySegment, (segment) => segment.story, {
@@ -53,7 +49,4 @@ export class Story {
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @Column()
-  userId: number;
 }

@@ -2,7 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -20,8 +20,8 @@ export class StoryTopic {
   @Column('text', { nullable: true })
   description?: string;
 
-  @OneToOne(() => Story, (story) => story.storyTopic)
-  story: Story;
+  @OneToMany(() => Story, (story) => story.storyTopic)
+  stories: Story[];
 
   @CreateDateColumn()
   createdAt: Date;

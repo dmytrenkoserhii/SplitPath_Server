@@ -15,5 +15,5 @@ export class CreateStoryDto {
   @ValidateNested()
   @Type(() => CreateStoryTopicDto)
   @IsNotEmpty()
-  topic: CreateStoryTopicDto;
+  topicId: number;
 }
