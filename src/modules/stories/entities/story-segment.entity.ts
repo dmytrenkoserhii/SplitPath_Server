@@ -21,7 +21,7 @@ export class StorySegment {
   @Column('simple-array')
   choices: string[];
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   selectedChoice: string | null;
 
   @ManyToOne(() => Story, (story) => story.segments)
