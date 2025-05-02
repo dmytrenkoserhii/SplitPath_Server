@@ -10,10 +10,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiOperation } from '@nestjs/swagger';
 
+import { AccessTokenGuard } from '@/modules/auth/guards';
 import { PaginatedResponse } from '@/shared/types';
 
 import { PAGINATED_STORIES_RESPONSE_EXAMPLE, STORY_RESPONSE_EXAMPLE } from '../constants';
@@ -37,6 +39,8 @@ export class StoriesController {
       },
     },
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   findAll(
     @Param('userId', ParseIntPipe) userId: number, // TODO: add CurrentSession
     @Query('page', ParseIntPipe) page: number,
@@ -57,6 +61,8 @@ export class StoriesController {
       },
     },
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   findOneById(@Param('id', ParseIntPipe) id: number) {
     return this.storiesService.findOneById(id);
   }
@@ -72,6 +78,8 @@ export class StoriesController {
       },
     },
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   create(@Body() createStoryDto: CreateStoryDto) {
     return this.storiesService.create(createStoryDto);
   }
@@ -87,6 +95,8 @@ export class StoriesController {
       },
     },
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   update(@Param('id', ParseIntPipe) id: number, @Body() updateStoryDto: UpdateStoryDto) {
     return this.storiesService.update(id, updateStoryDto);
   }
@@ -95,6 +105,8 @@ export class StoriesController {
   @ApiOperation({ summary: 'Delete a story by ID' })
   @ApiParam({ name: 'id', required: true, description: 'ID of the story to delete' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Story deleted successfully' })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.storiesService.remove(id);
   }
