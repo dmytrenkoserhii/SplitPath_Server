@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { DeleteResult, Repository } from 'typeorm';
+import { DeleteResult, In, Repository } from 'typeorm';
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,6 +35,15 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  public async findManyByIds(ids: number[], relations: string[] = []): Promise<User[]> {
+    if (!ids.length) return [];
+
+    return this.usersRepository.find({
+      where: { id: In(ids) },
+      relations,
+    });
   }
 
   public async findOneByEmail(email: string, fieldsToInclude: UserField[] = []): Promise<User> {
