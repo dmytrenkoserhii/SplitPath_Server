@@ -12,6 +12,19 @@ export class UpdateUserDto implements Partial<User> {
   email?: string;
 
   @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: 'Refresh token for the user session',
+    example: 'refresh_token_here',
+  })
+  refreshToken?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiPropertyOptional({ description: 'Indicates if the user email is verified', example: false })
+  isEmailVerified?: boolean;
+
+  @IsOptional()
   @IsBoolean()
   @ApiPropertyOptional({ description: 'Indicates if the user is premium', example: false })
   isPremium?: boolean;
