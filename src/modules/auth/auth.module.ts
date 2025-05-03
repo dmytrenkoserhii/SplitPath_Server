@@ -7,7 +7,7 @@ import { CookiesService } from '@/shared/services/cookies.service';
 import { SharedModule } from '@/shared/shared.module';
 
 import { AuthController } from './controllers';
-import { AuthService, TokenService } from './services';
+import { AuthService, TokensService } from './services';
 import { AccessTokenStrategy, LocalStrategy, RefreshTokenStrategy } from './strategies';
 
 @Module({
@@ -22,12 +22,12 @@ import { AccessTokenStrategy, LocalStrategy, RefreshTokenStrategy } from './stra
   controllers: [AuthController],
   providers: [
     AuthService,
-    TokenService,
+    TokensService,
     LocalStrategy,
     AccessTokenStrategy,
     RefreshTokenStrategy,
     CookiesService,
   ],
-  exports: [AuthService, TokenService],
+  exports: [AuthService, TokensService],
 })
 export class AuthModule {}

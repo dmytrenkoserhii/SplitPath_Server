@@ -12,7 +12,7 @@ import { ENV } from '@/shared/enums';
 import { Tokens } from '../types';
 
 @Injectable()
-export class TokenService {
+export class TokensService {
   private readonly jwtAccessSecret: string;
   private readonly jwtRefreshSecret: string;
   private readonly jwtAccessTokenExpirationTime: string;

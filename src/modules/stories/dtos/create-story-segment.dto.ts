@@ -1,11 +1,13 @@
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Length } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
 
+import { STORY_SEGMENT_VALIDATIONS } from '../validations';
+
 export class CreateStorySegmentDto {
   @ApiProperty({ description: 'Text content of the story segment' })
-  @IsNotEmpty()
   @IsString()
+  @Length(STORY_SEGMENT_VALIDATIONS.text.minLength, STORY_SEGMENT_VALIDATIONS.text.maxLength)
   text: string;
 
   @ApiProperty({ description: 'Available choices for this segment', type: [String] })

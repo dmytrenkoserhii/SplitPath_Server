@@ -8,7 +8,7 @@ export const CurrentSession = createParamDecorator(
     const payload = request.user as T;
 
     if (!payload) {
-      throw new UnauthorizedException('No payload found in request');
+      throw new UnauthorizedException('Request does not contain a valid JWT payload.');
     }
 
     return key ? payload[key] : payload;

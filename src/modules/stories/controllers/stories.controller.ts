@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   HttpStatus,
   Param,
   ParseIntPipe,
@@ -15,6 +14,7 @@ import {
 import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiOperation } from '@nestjs/swagger';
 
+import { CurrentSession } from '@/modules/auth/decorators';
 import { AccessTokenGuard } from '@/modules/auth/guards';
 import { PaginatedResponse } from '@/shared/types';
 
@@ -25,6 +25,8 @@ import { StoriesService } from '../services';
 
 @ApiTags('Stories')
 @Controller('stories')
+@ApiBearerAuth()
+@UseGuards(AccessTokenGuard)
 export class StoriesController {
   constructor(private readonly storiesService: StoriesService) {}
 
@@ -39,15 +41,13 @@ export class StoriesController {
       },
     },
   })
-  @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
   findAll(
-    @Param('userId', ParseIntPipe) userId: number, // TODO: add CurrentSession
+    @CurrentSession('sub') sub: number,
     @Query('page', ParseIntPipe) page: number,
     @Query('limit', ParseIntPipe) limit: number,
     @Query('sort') sort?: string,
   ): Promise<PaginatedResponse<Story>> {
-    return this.storiesService.findAllPaginated(userId, page, limit, sort);
+    return this.storiesService.findAllPaginated(sub, page, limit, sort);
   }
 
   @Get(':id')
@@ -61,8 +61,6 @@ export class StoriesController {
       },
     },
   })
-  @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
   findOneById(@Param('id', ParseIntPipe) id: number) {
     return this.storiesService.findOneById(id);
   }
@@ -78,8 +76,6 @@ export class StoriesController {
       },
     },
   })
-  @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
   create(@Body() createStoryDto: CreateStoryDto) {
     return this.storiesService.create(createStoryDto);
   }
@@ -95,8 +91,6 @@ export class StoriesController {
       },
     },
   })
-  @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
   update(@Param('id', ParseIntPipe) id: number, @Body() updateStoryDto: UpdateStoryDto) {
     return this.storiesService.update(id, updateStoryDto);
   }
@@ -105,8 +99,6 @@ export class StoriesController {
   @ApiOperation({ summary: 'Delete a story by ID' })
   @ApiParam({ name: 'id', required: true, description: 'ID of the story to delete' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Story deleted successfully' })
-  @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.storiesService.remove(id);
   }

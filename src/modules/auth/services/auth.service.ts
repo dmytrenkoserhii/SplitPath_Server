@@ -1,17 +1,22 @@
+import { Response } from 'express';
+
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { User } from '@/modules/users/entities';
 import { UsersService } from '@/modules/users/services';
+import { CookiesKeys, TimePeriods } from '@/shared/enums';
+import { CookiesService } from '@/shared/services';
 
 import { SignInDto, SignUpDto } from '../dtos';
 import { Tokens } from '../types';
-import { TokenService } from './token.service';
+import { TokensService } from './tokens.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly tokenService: TokenService,
+    private readonly tokensService: TokensService,
+    private readonly cookiesService: CookiesService,
   ) {}
 
   public async signUp(signUpDto: SignUpDto): Promise<{ user: User; tokens: Tokens }> {
@@ -32,12 +37,27 @@ export class AuthService {
   }
 
   public async logout(id: number): Promise<void> {
-    return this.tokenService.removeRefreshToken(id);
+    return this.tokensService.removeRefreshToken(id);
   }
 
   private async generateAndStoreTokens(user: User): Promise<Tokens> {
-    const tokens = await this.tokenService.createTokens(user);
-    await this.tokenService.storeRefreshToken(user.id, tokens.refreshToken);
+    const tokens = await this.tokensService.createTokens(user);
+    await this.tokensService.storeRefreshToken(user.id, tokens.refreshToken);
     return tokens;
+  }
+
+  public setAuthCookies(res: Response, tokens: Tokens) {
+    this.cookiesService.setCookie(
+      res,
+      CookiesKeys.ACCESS_TOKEN,
+      tokens.accessToken,
+      TimePeriods.HOUR,
+    );
+    this.cookiesService.setCookie(
+      res,
+      CookiesKeys.REFRESH_TOKEN,
+      tokens.refreshToken,
+      TimePeriods.WEEK,
+    );
   }
 }
