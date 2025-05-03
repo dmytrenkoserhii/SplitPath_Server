@@ -1,14 +1,19 @@
 import { DeleteResult } from 'typeorm';
 
-import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CreateUserDto, UpdateUserDto } from '../dtos';
+import { CurrentSession } from '@/modules/auth/decorators/current-session.decorator';
+import { AccessTokenGuard } from '@/modules/auth/guards';
+
+import { UpdateUserDto } from '../dtos';
 import { User } from '../entities';
 import { UsersService } from '../services';
 
 @ApiTags('Users')
 @Controller('users')
+@ApiBearerAuth()
+@UseGuards(AccessTokenGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -22,8 +27,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return current user', type: User })
   @Get(':id')
-  public async getCurrent(@Param('id') id: number): Promise<User> {
-    return this.usersService.findOneById(id);
+  public async getCurrent(@CurrentSession('sub') sub: number): Promise<User> {
+    return this.usersService.findOneById(sub);
   }
 
   @ApiOperation({ summary: 'Get user by id' })
@@ -36,15 +41,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Find user by email' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return user by email', type: User })
   @Get('email/:email')
-  public async findOneByEmail(@Param('email') email: string): Promise<User> {
+  public async findOneByEmail(@Param('email') email: string): Promise<User | null> {
     return this.usersService.findOneByEmail(email);
-  }
-
-  @ApiOperation({ summary: 'Create new user' })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'User created successfully', type: User })
-  @Post()
-  public async create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.usersService.create(createUserDto);
   }
 
   @ApiOperation({ summary: 'Update user' })
