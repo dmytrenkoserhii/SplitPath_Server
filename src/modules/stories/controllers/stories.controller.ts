@@ -3,17 +3,19 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiOperation } from '@nestjs/swagger';
 
+import { CurrentSession } from '@/modules/auth/decorators';
+import { AccessTokenGuard } from '@/modules/auth/guards';
 import { PaginatedResponse } from '@/shared/types';
 
 import { PAGINATED_STORIES_RESPONSE_EXAMPLE, STORY_RESPONSE_EXAMPLE } from '../constants';
@@ -23,6 +25,8 @@ import { StoriesService } from '../services';
 
 @ApiTags('Stories')
 @Controller('stories')
+@ApiBearerAuth()
+@UseGuards(AccessTokenGuard)
 export class StoriesController {
   constructor(private readonly storiesService: StoriesService) {}
 
@@ -38,12 +42,12 @@ export class StoriesController {
     },
   })
   findAll(
-    @Param('userId', ParseIntPipe) userId: number, // TODO: add CurrentSession
+    @CurrentSession('sub') sub: number,
     @Query('page', ParseIntPipe) page: number,
     @Query('limit', ParseIntPipe) limit: number,
     @Query('sort') sort?: string,
   ): Promise<PaginatedResponse<Story>> {
-    return this.storiesService.findAllPaginated(userId, page, limit, sort);
+    return this.storiesService.findAllPaginated(sub, page, limit, sort);
   }
 
   @Get(':id')

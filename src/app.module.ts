@@ -3,6 +3,7 @@ import * as Joi from 'joi';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { MessagesModule } from './modules/messages/messages.module';
@@ -24,6 +25,7 @@ const ENVIRONMENT = process.env.NODE_ENV;
     StoriesModule,
     MessagesModule,
     FriendsModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

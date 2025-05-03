@@ -15,4 +15,9 @@ export const ENV_VALIDATION = {
   [ENV.CORS_METHODS]: Joi.string().required(),
 
   [ENV.DATABASE_URL]: Joi.string().required(),
+
+  [ENV.JWT_ACCESS_SECRET]: Joi.string().required(),
+  [ENV.JWT_REFRESH_SECRET]: Joi.string().required(),
+  [ENV.JWT_ACCESS_TOKEN_EXPIRATION_TIME]: Joi.string().required(),
+  [ENV.JWT_REFRESH_TOKEN_EXPIRATION_TIME]: Joi.string().required(),
 };

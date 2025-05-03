@@ -1,7 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import { DeleteResult, In, Repository } from 'typeorm';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateUserDto, UpdateUserDto } from '../dtos';
@@ -46,7 +46,10 @@ export class UsersService {
     });
   }
 
-  public async findOneByEmail(email: string, fieldsToInclude: UserField[] = []): Promise<User> {
+  public async findOneByEmail(
+    email: string,
+    fieldsToInclude: UserField[] = [],
+  ): Promise<User | null> {
     let query = this.usersRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email });
@@ -56,9 +59,6 @@ export class UsersService {
     });
 
     const user = await query.getOne();
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
-    }
 
     return user;
   }
@@ -92,5 +92,24 @@ export class UsersService {
   public async deleteById(id: number): Promise<DeleteResult> {
     const user = await this.findOneById(id);
     return this.usersRepository.delete(user.id);
+  }
+
+  public async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.findOneByEmail(email, ['hashedPassword']);
+
+    if (!user) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    if (!user.hashedPassword) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.hashedPassword);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    return user;
   }
 }

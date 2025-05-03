@@ -32,6 +32,12 @@ export class User {
   })
   role: Role;
 
+  @Column({ nullable: true, type: 'text', select: false })
+  refreshToken: string | null;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
   @Column({ default: false })
   isPremium: boolean;
 

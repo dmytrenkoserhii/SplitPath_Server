@@ -8,8 +8,11 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+
+import { AccessTokenGuard } from '@/modules/auth/guards';
 
 import { STORY_TOPIC_RESPONSE_EXAMPLE } from '../constants';
 import { CreateStoryTopicDto, UpdateStoryTopicDto } from '../dtos';
@@ -61,6 +64,8 @@ export class StoryTopicsController {
       },
     },
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   create(@Body() createDto: CreateStoryTopicDto) {
     return this.storyTopicsService.create(createDto);
   }
@@ -76,6 +81,8 @@ export class StoryTopicsController {
       },
     },
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateStoryTopicDto) {
     return this.storyTopicsService.update(id, updateDto);
   }
@@ -87,6 +94,8 @@ export class StoryTopicsController {
     status: HttpStatus.NO_CONTENT,
     description: 'Story topic deleted successfully',
   })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.storyTopicsService.remove(id);
   }
