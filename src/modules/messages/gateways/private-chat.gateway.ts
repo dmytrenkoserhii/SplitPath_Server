@@ -11,9 +11,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
-// TODO
-// import { WsJwtGuard } from '@/modules/auth/guards/ws-jwt-auth.guard';
-// import { SocketAuthMiddleware } from '@/modules/auth/middlewares/ws.middleware';
+import { WsJwtGuard } from '@/modules/auth/guards';
+import { SocketAuthMiddleware } from '@/modules/auth/middlewares';
 import { ErrorHandler } from '@/shared/utils';
 
 import { Message } from '../entities';
@@ -32,7 +31,7 @@ import {
     credentials: true,
   },
 })
-// @UseGuards(WsJwtGuard)
+@UseGuards(WsJwtGuard)
 export class PrivateChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +42,7 @@ export class PrivateChatGateway implements OnGatewayConnection, OnGatewayDisconn
   constructor(private readonly privateMessagesService: PrivateMessagesService) {}
 
   afterInit() {
-    // this.server.use(SocketAuthMiddleware());
+    this.server.use(SocketAuthMiddleware());
   }
 
   handleConnection(@ConnectedSocket() client: Socket) {

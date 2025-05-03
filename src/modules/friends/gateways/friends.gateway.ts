@@ -10,8 +10,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
-// import { WsJwtGuard } from '@/modules/auth/guards/ws-jwt-auth.guard';
-// import { SocketAuthMiddleware } from '@/modules/auth/middlewares/ws.middleware';
+import { WsJwtGuard } from '@/modules/auth/guards';
+import { SocketAuthMiddleware } from '@/modules/auth/middlewares';
 
 import { Friend } from '../entities';
 import { FriendsService } from '../services';
@@ -24,7 +24,7 @@ import { FriendsEmitEvents } from '../types';
     credentials: true,
   },
 })
-// @UseGuards(WsJwtGuard)
+@UseGuards(WsJwtGuard)
 export class FriendsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(FriendsGateway.name);
 
@@ -37,7 +37,7 @@ export class FriendsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
   private onlineUsers: Set<number> = new Set();
 
   afterInit(client: Socket) {
-    // client.use(SocketAuthMiddleware() as any);
+    client.use(SocketAuthMiddleware() as any);
     this.logger.log('Friends Gateway Initialized');
   }
 
