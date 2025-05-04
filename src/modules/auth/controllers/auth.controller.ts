@@ -1,16 +1,17 @@
 import { Response } from 'express';
 
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CookiesKeys } from '@/shared/enums';
+import { CookiesKeys, ENV } from '@/shared/enums';
 import { CookiesService } from '@/shared/services';
 
 import { CurrentSession } from '../decorators';
 import { SignInDto, SignUpDto } from '../dtos';
-import { AccessTokenGuard, LocalAuthGuard, RefreshTokenGuard } from '../guards';
+import { AccessTokenGuard, GoogleOAuthGuard, LocalAuthGuard, RefreshTokenGuard } from '../guards';
 import { AuthService, TokensService } from '../services';
-import { JwtRefreshPayload } from '../types';
+import { GoogleAuthPayload, JwtRefreshPayload } from '../types';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -19,6 +20,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly cookiesService: CookiesService,
     private readonly tokensService: TokensService,
+    private readonly configService: ConfigService,
   ) {}
 
   @ApiOperation({ summary: 'Sign up a new user' })
@@ -70,5 +72,28 @@ export class AuthController {
     await this.authService.logout(sub);
     this.cookiesService.removeCookie(res, CookiesKeys.ACCESS_TOKEN);
     this.cookiesService.removeCookie(res, CookiesKeys.REFRESH_TOKEN);
+  }
+
+  @ApiOperation({ summary: 'Authenticate with Google' })
+  @ApiResponse({ status: HttpStatus.FOUND, description: 'Redirect to Google authentication' })
+  @Get('google')
+  @UseGuards(GoogleOAuthGuard)
+  public async googleAuth() {}
+
+  @ApiOperation({ summary: 'Google authentication callback' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User successfully authenticated with Google',
+  })
+  @Get('google/callback')
+  @UseGuards(GoogleOAuthGuard)
+  googleAuthRedirect(
+    @CurrentSession() session: GoogleAuthPayload,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const clientUrl = this.configService.get<string>(`${ENV.CLIENT_URL}`);
+
+    this.authService.setAuthCookies(res, session);
+    res.redirect(`${clientUrl}/auth/sign-in`);
   }
 }
