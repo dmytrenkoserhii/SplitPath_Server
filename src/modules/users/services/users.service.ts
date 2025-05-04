@@ -1,10 +1,12 @@
+import { validateOrReject } from 'class-validator';
+
 import * as bcrypt from 'bcrypt';
 import { DeleteResult, Repository } from 'typeorm';
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateUserDto, UpdateUserDto } from '../dtos';
+import { CreateUserDto, CreateUserWithoutPasswordDto, UpdateUserDto } from '../dtos';
 import { User } from '../entities';
 import { AccountService } from './account.service';
 
@@ -54,6 +56,10 @@ export class UsersService {
     return user;
   }
 
+  public async findOneByOAuthId(oauthId: string): Promise<User | null> {
+    return this.usersRepository.findOneBy({ oauthId });
+  }
+
   public async create(createUserDto: CreateUserDto): Promise<User> {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
@@ -67,6 +73,19 @@ export class UsersService {
 
     await this.usersRepository.save(user);
     await this.accountService.create({ username }, user);
+
+    return user;
+  }
+
+  public async createWithoutPassword(createUserDto: CreateUserWithoutPasswordDto): Promise<User> {
+    try {
+      await validateOrReject(createUserDto);
+    } catch (errors) {
+      throw new BadRequestException(errors);
+    }
+
+    const user = this.usersRepository.create(createUserDto);
+    await this.usersRepository.save(user);
 
     return user;
   }
