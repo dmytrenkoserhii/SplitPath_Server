@@ -20,4 +20,8 @@ export const ENV_VALIDATION = {
   [ENV.JWT_REFRESH_SECRET]: Joi.string().required(),
   [ENV.JWT_ACCESS_TOKEN_EXPIRATION_TIME]: Joi.string().required(),
   [ENV.JWT_REFRESH_TOKEN_EXPIRATION_TIME]: Joi.string().required(),
+
+  [ENV.GOOGLE_CLIENT_ID]: Joi.string().required(),
+  [ENV.GOOGLE_CLIENT_SECRET]: Joi.string().required(),
+  [ENV.GOOGLE_CALLBACK_URL]: Joi.string().required(),
 };

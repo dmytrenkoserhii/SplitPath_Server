@@ -23,6 +23,12 @@ export class AccountService {
     return account;
   }
 
+  public async findOneByUsername(username: string): Promise<Account | null> {
+    const account = await this.accountRepository.findOne({ where: { username } });
+
+    return account;
+  }
+
   public async create(createAccountDto: CreateAccountDto, user: User): Promise<Account> {
     const account = await this.accountRepository.create({
       ...createAccountDto,
