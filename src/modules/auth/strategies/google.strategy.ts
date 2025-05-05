@@ -7,6 +7,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { AccountService } from '@/modules/users/services/account.service';
 import { UsersService } from '@/modules/users/services/users.service';
 import { ENV } from '@/shared/enums/env.enum';
+import { generate8DigitNumber } from '@/shared/utils';
 
 import { GoogleProfile } from './../types/google-profile.interface';
 
@@ -41,9 +42,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         refreshToken: refreshToken,
       });
 
-      this.accountService.createWithGoogleAuth(
+      let baseUsername = name.givenName;
+      let usernameToTry = baseUsername;
+      let accountExists = await this.accountService.findOneByUsername(usernameToTry);
+
+      while (accountExists) {
+        usernameToTry = `${baseUsername}${generate8DigitNumber()}`;
+        accountExists = await this.accountService.findOneByUsername(usernameToTry);
+      }
+
+      await this.accountService.create(
         {
-          username: name.givenName,
+          username: usernameToTry,
         },
         user,
       );

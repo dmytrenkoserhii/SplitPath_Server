@@ -3,7 +3,7 @@ import { Repository } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateAccountDto, CreateAccountWithGoogleAuthDto, UpdateAccountDto } from '../dtos';
+import { CreateAccountDto, UpdateAccountDto } from '../dtos';
 import { Account, User } from '../entities';
 
 @Injectable()
@@ -23,21 +23,15 @@ export class AccountService {
     return account;
   }
 
+  public async findOneByUsername(username: string): Promise<Account | null> {
+    const account = await this.accountRepository.findOne({ where: { username } });
+
+    return account;
+  }
+
   public async create(createAccountDto: CreateAccountDto, user: User): Promise<Account> {
     const account = await this.accountRepository.create({
       ...createAccountDto,
-      user,
-    });
-
-    return this.accountRepository.save(account);
-  }
-
-  public async createWithGoogleAuth(
-    createAccountWithGoogleAuthDto: CreateAccountWithGoogleAuthDto,
-    user: User,
-  ): Promise<Account> {
-    const account = await this.accountRepository.create({
-      ...createAccountWithGoogleAuthDto,
       user,
     });
 

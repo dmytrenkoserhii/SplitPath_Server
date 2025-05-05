@@ -32,6 +32,7 @@ export class UsersService {
     });
 
     const user = await query.getOne();
+
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -56,8 +57,19 @@ export class UsersService {
     return user;
   }
 
-  public async findOneByOAuthId(oauthId: string): Promise<User | null> {
-    return this.usersRepository.findOneBy({ oauthId });
+  public async findOneByOAuthId(
+    oauthId: string,
+    fieldsToInclude: UserField[] = [],
+  ): Promise<User | null> {
+    let query = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.oauthId = :oauthId', { oauthId });
+
+    fieldsToInclude.forEach((field) => {
+      query = query.addSelect(`user.${field}`);
+    });
+
+    return query.getOne();
   }
 
   public async create(createUserDto: CreateUserDto): Promise<User> {
