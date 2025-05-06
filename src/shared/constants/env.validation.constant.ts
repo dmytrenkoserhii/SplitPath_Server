@@ -24,4 +24,8 @@ export const ENV_VALIDATION = {
   [ENV.GOOGLE_CLIENT_ID]: Joi.string().required(),
   [ENV.GOOGLE_CLIENT_SECRET]: Joi.string().required(),
   [ENV.GOOGLE_CALLBACK_URL]: Joi.string().required(),
+
+  [ENV.MAILGUN_KEY]: Joi.string().required(),
+  [ENV.MAILGUN_DOMAIN]: Joi.string().required(),
+  [ENV.EMAIL_SEND_FROM]: Joi.string().required(),
 };
