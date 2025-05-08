@@ -21,14 +21,17 @@ import { PaginatedResponse } from '@/shared/types';
 import { PAGINATED_STORIES_RESPONSE_EXAMPLE, STORY_RESPONSE_EXAMPLE } from '../constants';
 import { CreateStoryDto, UpdateStoryDto } from '../dtos';
 import { Story } from '../entities';
-import { StoriesService } from '../services';
+import { StoriesAIService, StoriesService } from '../services';
 
 @ApiTags('Stories')
 @Controller('stories')
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard)
 export class StoriesController {
-  constructor(private readonly storiesService: StoriesService) {}
+  constructor(
+    private readonly storiesService: StoriesService,
+    private readonly storiesAiService: StoriesAIService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Find all stories with pagination' })
@@ -95,11 +98,25 @@ export class StoriesController {
     return this.storiesService.update(id, updateStoryDto);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a story by ID' })
-  @ApiParam({ name: 'id', required: true, description: 'ID of the story to delete' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Story deleted successfully' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.storiesService.remove(id);
+  @Post(':id/segments/generate-initial')
+  @ApiOperation({ summary: 'Generate initial story segment' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Initial story segment generated successfully',
+  })
+  async generateInitialSegment(@Param('id', ParseIntPipe) id: number) {
+    const story = await this.storiesService.findOneById(id);
+    return this.storiesAiService.generateSegment(story.storyTopic);
+  }
+
+  @Post(':id/segments/generate-next')
+  @ApiOperation({ summary: 'Generate next story segment' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Next story segment generated successfully',
+  })
+  async generateNextSegment(@Param('id', ParseIntPipe) id: number) {
+    const story = await this.storiesService.findOneById(id);
+    return this.storiesAiService.generateSegment(story.storyTopic, story.segments);
   }
 }
