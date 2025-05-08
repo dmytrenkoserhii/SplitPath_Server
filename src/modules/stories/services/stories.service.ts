@@ -43,7 +43,10 @@ export class StoriesService {
   }
 
   async findOneById(id: number): Promise<Story> {
-    const story = await this.storyRepository.findOneBy({ id });
+    const story = await this.storyRepository.findOne({
+      where: { id },
+      relations: ['storyTopic', 'segments'],
+    });
 
     if (!story) {
       throw new NotFoundException(`Story with ID "${id}" not found`);
