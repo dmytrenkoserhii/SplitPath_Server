@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsString, Length, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, Length } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -18,7 +18,6 @@ export class CreateStoryDto {
   userId: number;
 
   @ApiProperty({ description: 'Topic ID of the story', example: 1 })
-  @ValidateNested()
   @Type(() => CreateStoryTopicDto)
   @IsNotEmpty()
   topicId: number;

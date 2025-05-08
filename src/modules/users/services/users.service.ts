@@ -7,10 +7,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateUserDto, CreateUserWithoutPasswordDto, UpdateUserDto } from '../dtos';
-import { User } from '../entities';
+import { User, UserField } from '../entities';
 import { AccountService } from './account.service';
-
-type UserField = keyof User;
 
 @Injectable()
 export class UsersService {
@@ -24,11 +22,19 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  public async findOneById(id: number, fieldsToInclude: UserField[] = []): Promise<User> {
+  public async findOneById(
+    id: number,
+    relationsToInclude: UserField[] = [],
+    fieldsToInclude: UserField[] = [],
+  ): Promise<User> {
     let query = this.usersRepository.createQueryBuilder('user').where('user.id = :id', { id });
 
     fieldsToInclude.forEach((field) => {
       query = query.addSelect(`user.${field}`);
+    });
+
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`user.${relation}`, relation as string);
     });
 
     const user = await query.getOne();
@@ -42,6 +48,7 @@ export class UsersService {
 
   public async findOneByEmail(
     email: string,
+    relationsToInclude: UserField[] = [],
     fieldsToInclude: UserField[] = [],
   ): Promise<User | null> {
     let query = this.usersRepository
@@ -52,6 +59,10 @@ export class UsersService {
       query = query.addSelect(`user.${field}`);
     });
 
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`user.${relation}`, relation as string);
+    });
+
     const user = await query.getOne();
 
     return user;
@@ -59,6 +70,7 @@ export class UsersService {
 
   public async findOneByOAuthId(
     oauthId: string,
+    relationsToInclude: UserField[] = [],
     fieldsToInclude: UserField[] = [],
   ): Promise<User | null> {
     let query = this.usersRepository
@@ -67,6 +79,10 @@ export class UsersService {
 
     fieldsToInclude.forEach((field) => {
       query = query.addSelect(`user.${field}`);
+    });
+
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`user.${relation}`, relation as string);
     });
 
     return query.getOne();
