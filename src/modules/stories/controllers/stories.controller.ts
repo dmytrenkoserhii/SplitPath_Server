@@ -105,7 +105,7 @@ export class StoriesController {
     description: 'Initial story segment generated successfully',
   })
   async generateInitialSegment(@Param('id', ParseIntPipe) id: number) {
-    const story = await this.storiesService.findOneById(id);
+    const story = await this.storiesService.findOneById(id, ['storyTopic', 'segments']);
     return this.storiesAiService.generateSegment(story.storyTopic);
   }
 
@@ -116,7 +116,7 @@ export class StoriesController {
     description: 'Next story segment generated successfully',
   })
   async generateNextSegment(@Param('id', ParseIntPipe) id: number) {
-    const story = await this.storiesService.findOneById(id);
+    const story = await this.storiesService.findOneById(id, ['storyTopic', 'segments']);
     return this.storiesAiService.generateSegment(story.storyTopic, story.segments);
   }
 }

@@ -7,7 +7,7 @@ import { PaginatedResponse } from '@/shared/types';
 import { createPaginatedResponse } from '@/shared/utils';
 
 import { CreateStoryDto, UpdateStoryDto } from '../dtos';
-import { Story } from '../entities';
+import { Story, StoryField } from '../entities';
 import { StoryTopicsService } from './story-topics.service';
 
 @Injectable()
@@ -42,15 +42,27 @@ export class StoriesService {
     return createPaginatedResponse(items, total, page, limit);
   }
 
-  async findOneById(id: number): Promise<Story> {
-    const story = await this.storyRepository.findOne({
-      where: { id },
-      relations: ['storyTopic', 'segments'],
+  async findOneById(
+    id: number,
+    relationsToInclude: StoryField[] = [],
+    fieldsToInclude: StoryField[] = [],
+  ): Promise<Story> {
+    let query = this.storyRepository.createQueryBuilder('story').where('story.id = :id', { id });
+
+    fieldsToInclude.forEach((field) => {
+      query = query.addSelect(`story.${field}`);
     });
+
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`story.${relation}`, relation);
+    });
+
+    const story = await query.getOne();
 
     if (!story) {
       throw new NotFoundException(`Story with ID "${id}" not found`);
     }
+
     return story;
   }
 

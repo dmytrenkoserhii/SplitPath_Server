@@ -57,3 +57,5 @@ export class User {
   @JoinColumn()
   account: Account;
 }
+
+export type UserField = keyof User;

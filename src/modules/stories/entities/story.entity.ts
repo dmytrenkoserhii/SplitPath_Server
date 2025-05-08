@@ -50,3 +50,5 @@ export class Story {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+export type StoryField = keyof Story;
