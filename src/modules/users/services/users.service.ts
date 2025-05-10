@@ -133,7 +133,7 @@ export class UsersService {
   }
 
   public async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.findOneByEmail(email, ['hashedPassword']);
+    const user = await this.findOneByEmail(email, [], ['hashedPassword']);
 
     if (!user) {
       throw new BadRequestException('Invalid credentials');

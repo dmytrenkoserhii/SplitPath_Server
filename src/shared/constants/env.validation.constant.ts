@@ -30,4 +30,9 @@ export const ENV_VALIDATION = {
   [ENV.EMAIL_SEND_FROM]: Joi.string().required(),
 
   [ENV.OPENAI_API_KEY]: Joi.string().required(),
+
+  [ENV.LEMON_SQUEEZY_API_URL]: Joi.string().required(),
+  [ENV.LEMON_SQUEEZY_API_KEY]: Joi.string().required(),
+  [ENV.LEMON_SQUEEZY_STORE_ID]: Joi.string().required(),
+  [ENV.LEMON_SQUEEZY_WEBHOOK_SIGNATURE]: Joi.string().required(),
 };
