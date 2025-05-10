@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './modules/database/database.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { UsersModule } from './modules/users/users.module';
 import { ENV_VALIDATION } from './shared/constants';
@@ -22,6 +23,7 @@ const ENVIRONMENT = process.env.NODE_ENV;
     UsersModule,
     StoriesModule,
     AuthModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
