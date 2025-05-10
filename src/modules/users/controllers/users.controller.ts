@@ -26,7 +26,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return current user', type: User })
-  @Get(':id')
+  @Get('current')
   public async getCurrent(@CurrentSession('sub') sub: number): Promise<User> {
     return this.usersService.findOneById(sub);
   }

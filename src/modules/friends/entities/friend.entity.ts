@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -12,6 +13,7 @@ import { User } from '@/modules/users/entities/user.entity';
 import { FriendStatus } from '../enums';
 
 @Entity('friends')
+@Index(['sender', 'receiver'], { unique: true })
 export class Friend {
   @PrimaryGeneratedColumn()
   id: number;

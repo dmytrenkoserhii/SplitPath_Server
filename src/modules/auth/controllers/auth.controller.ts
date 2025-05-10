@@ -1,7 +1,7 @@
 import { Response } from 'express';
 
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CookiesKeys } from '@/shared/enums';
 import { CookiesService } from '@/shared/services';
@@ -60,6 +60,7 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Logout the current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User successfully logged out' })
+  @ApiBearerAuth()
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
   @Get('logout')
@@ -67,6 +68,7 @@ export class AuthController {
     @CurrentSession('sub') sub: number,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log('logout', sub);
     await this.authService.logout(sub);
     this.cookiesService.removeCookie(res, CookiesKeys.ACCESS_TOKEN);
     this.cookiesService.removeCookie(res, CookiesKeys.REFRESH_TOKEN);

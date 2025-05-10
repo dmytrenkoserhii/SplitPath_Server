@@ -1,11 +1,22 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentSession } from '@/modules/auth/decorators';
 import { AccessTokenGuard } from '@/modules/auth/guards';
 import { PaginatedResponse } from '@/shared/types';
+import { WebSocketErrorHandler } from '@/shared/utils';
 
-import { CreateFriendRequestDto } from '../dtos';
+import { CreateFriendRequestDto, GetFriendRequestsDto } from '../dtos';
 import { Friend } from '../entities';
 import { FriendsGateway } from '../gateways';
 import { FriendsService } from '../services';
@@ -15,6 +26,8 @@ import { FriendsService } from '../services';
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard)
 export class FriendsController {
+  private readonly logger = new Logger(FriendsController.name);
+
   constructor(
     private readonly friendsService: FriendsService,
     private readonly friendsGateway: FriendsGateway,
@@ -29,7 +42,13 @@ export class FriendsController {
   ): Promise<Friend> {
     const friendRequest = await this.friendsService.sendFriendRequest(sub, createFriendRequestDto);
 
-    this.friendsGateway.emitFriendRequest(friendRequest);
+    WebSocketErrorHandler.handle(
+      () => this.friendsGateway.emitFriendRequest(friendRequest),
+      'emit.friendRequest',
+      friendRequest.receiver.id,
+      this.logger,
+    );
+
     return friendRequest;
   }
 
@@ -42,7 +61,13 @@ export class FriendsController {
   ): Promise<Friend> {
     const acceptedRequest = await this.friendsService.acceptFriendRequest(sub, requestId);
 
-    this.friendsGateway.emitFriendRequestAccepted(acceptedRequest);
+    WebSocketErrorHandler.handle(
+      () => this.friendsGateway.emitFriendRequestAccepted(acceptedRequest),
+      'emit.friendRequestAccepted',
+      acceptedRequest.sender.id,
+      this.logger,
+    );
+
     return acceptedRequest;
   }
 
@@ -55,7 +80,13 @@ export class FriendsController {
   ): Promise<Friend> {
     const rejectedRequest = await this.friendsService.rejectFriendRequest(sub, requestId);
 
-    this.friendsGateway.emitFriendRequestRejected(rejectedRequest);
+    WebSocketErrorHandler.handle(
+      () => this.friendsGateway.emitFriendRequestRejected(rejectedRequest),
+      'emit.friendRequestRejected',
+      rejectedRequest.sender.id,
+      this.logger,
+    );
+
     return rejectedRequest;
   }
 
@@ -64,8 +95,16 @@ export class FriendsController {
   @ApiResponse({ status: 200, type: Friend })
   async deleteFriend(@Param('id') id: number, @CurrentSession('sub') sub: number): Promise<Friend> {
     const deletedFriend = await this.friendsService.deleteFriend(sub, id);
+    const otherUserId =
+      deletedFriend.sender.id === sub ? deletedFriend.receiver.id : deletedFriend.sender.id;
 
-    this.friendsGateway.emitFriendDeleted({ ...deletedFriend, id: +id });
+    WebSocketErrorHandler.handle(
+      () => this.friendsGateway.emitFriendDeleted({ ...deletedFriend, id: +id }),
+      'emit.friendDeleted',
+      otherUserId,
+      this.logger,
+    );
+
     return deletedFriend;
   }
 
@@ -80,48 +119,14 @@ export class FriendsController {
     return this.friendsService.getFriendsList(sub, { page, limit });
   }
 
-  @Get('pending/incoming')
-  @ApiOperation({ summary: 'Get incoming friend requests' })
+  @Get('requests')
+  @ApiOperation({ summary: 'Get friend requests with optional status and direction filters' })
   @ApiResponse({ status: 200, type: [Friend] })
-  async getIncomingRequests(
+  async getFriendRequests(
     @CurrentSession('sub') sub: number,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
+    @Query() query: GetFriendRequestsDto,
   ): Promise<PaginatedResponse<Friend>> {
-    return this.friendsService.getPendingIncomingRequests(sub, { page, limit });
-  }
-
-  @Get('pending/outgoing')
-  @ApiOperation({ summary: 'Get outgoing friend requests' })
-  @ApiResponse({ status: 200, type: [Friend] })
-  async getOutgoingRequests(
-    @CurrentSession('sub') sub: number,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ): Promise<PaginatedResponse<Friend>> {
-    return this.friendsService.getPendingOutgoingRequests(sub, { page, limit });
-  }
-
-  @Get('rejected/incoming')
-  @ApiOperation({ summary: 'Get rejected friend requests' })
-  @ApiResponse({ status: 200, type: [Friend] })
-  async getRejectedIncomingRequests(
-    @CurrentSession('sub') sub: number,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ): Promise<PaginatedResponse<Friend>> {
-    return this.friendsService.getRejectedIncomingRequests(sub, { page, limit });
-  }
-
-  @Get('rejected/outgoing')
-  @ApiOperation({ summary: 'Get rejected outgoing friend requests' })
-  @ApiResponse({ status: 200, type: [Friend] })
-  async getRejectedOutgoingRequests(
-    @CurrentSession('sub') sub: number,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ): Promise<PaginatedResponse<Friend>> {
-    return this.friendsService.getRejectedOutgoingRequests(sub, { page, limit });
+    return this.friendsService.getFriendRequests(sub, query);
   }
 
   @Get('online-status')
@@ -131,7 +136,7 @@ export class FriendsController {
   ): Promise<{ [key: number]: boolean }> {
     const friendsList = await this.friendsService.getFriendsList(sub, {
       page: 1,
-      limit: 1000,
+      limit: 200,
     });
 
     const onlineStatus: { [key: number]: boolean } = {};
@@ -153,7 +158,13 @@ export class FriendsController {
   ): Promise<Friend> {
     const resentRequest = await this.friendsService.resendFriendRequest(sub, requestId);
 
-    this.friendsGateway.emitFriendRequestResent(resentRequest);
+    WebSocketErrorHandler.handle(
+      () => this.friendsGateway.emitFriendRequestResent(resentRequest),
+      'emit.friendRequestResent',
+      resentRequest.receiver.id,
+      this.logger,
+    );
+
     return resentRequest;
   }
 }

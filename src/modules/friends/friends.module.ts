@@ -12,5 +12,6 @@ import { FriendsService } from './services';
   imports: [UsersModule, TypeOrmModule.forFeature([Friend])],
   controllers: [FriendsController],
   providers: [FriendsService, FriendsGateway],
+  exports: [FriendsService],
 })
 export class FriendsModule {}

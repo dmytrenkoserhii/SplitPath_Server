@@ -17,10 +17,19 @@ import { Friend } from '../entities';
 import { FriendsService } from '../services';
 import { FriendsEmitEvents } from '../types';
 
+// TODO: future reference for scaling userSocketMap and onlineUsers
+// Use a Shared Store: Implement a shared store like Redis to keep track of user socket mappings and online status across all instances.
+// Socket.IO Adapters: Use a Socket.IO adapter (e.g., socket.io-redis-adapter). This adapter handles message broadcasting across multiple instances automatically using the shared store (like Redis Pub/Sub). It effectively solves the problem of emitting events to users connected to different server instances.
+// Refactor State Logic: Modify handleConnection, handleDisconnect, isUserOnline, and the emit... methods to interact with the shared store (e.g., Redis) instead of the in-memory Map and Set.
+
+// TODO: future reference for broadcastUserStatus
+// Targeted Emission via Rooms: Have each connected user join a Socket.IO room named after their userId (e.g., client.join(user_${userId})). When user A's status changes, fetch user A's friend IDs *once* (perhaps cached). Then, emit the status update directly to the rooms of those friends:server.to(friendIdRooms).emit('friend_status_changed', { userId: A, isOnline });(wherefriendIdRoomsis an array like['user_123', 'user_456']`). This requires an efficient way to get friend IDs.
+// Pub/Sub: Use Redis Pub/Sub. When a user connects/disconnects, publish a message (user_status_update, payload: { userId, isOnline }). Each gateway instance could subscribe to updates for the users currently connected to it. This requires more complex subscription management but is very scalable.
+
 @WebSocketGateway({
   namespace: '/friends',
   cors: {
-    origin: 'http://localhost:3000',
+    origin: process.env.CLIENT_URL,
     credentials: true,
   },
 })
@@ -61,6 +70,7 @@ export class FriendsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     this.logger.log(`User ${userId} disconnected from friends namespace`);
   }
 
+  // TODO: improve performance
   private async broadcastUserStatus(userId: number, isOnline: boolean) {
     const friends = await this.getFriendIds(userId);
 

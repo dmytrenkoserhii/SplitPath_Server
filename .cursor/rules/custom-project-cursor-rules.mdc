@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Project tech stack:
+"@mantine/core": "^7.17.3",
+"@mantine/dates": "^7.17.3",
+"@mantine/form": "^7.17.3",
+"@mantine/hooks": "^7.17.3",
+"@mantine/modals": "^7.17.3",
+"@mantine/notifications": "^7.17.3",
+"dayjs": "^1.11.13",
+"lucide-react": "^0.487.0",
+"next": "15.2.4",
+"react": "^19.0.0",
+"react-dom": "^19.0.0"
+
+# Cursor Development Rules & AI Collaboration Guide
+ 
+## 📜 Core Philosophy
+ 
+1.  **Simplicity:** Prioritize simple, clear, and maintainable solutions. Avoid unnecessary complexity or over-engineering.
+2.  **Iterate:** Prefer iterating on existing, working code rather than building entirely new solutions from scratch, unless fundamentally necessary or explicitly requested.
+3.  **Focus:** Concentrate efforts on the specific task assigned. Avoid unrelated changes or scope creep.
+4.  **Quality:** Strive for a clean, organized, well-tested, and secure codebase.
+5.  **Collaboration:** This document guides both human developers and the AI assistant for effective teamwork.
+
+## ✨ Code Quality & Style
+ 
+1.  **TypeScript Guidelines:** Use strict typing (avoid `any`). Document complex logic or public APIs with JSDoc.
+2.  **Readability & Maintainability:** Write clean, well-organized code.
+3.  **Small Files & Components:**
+    *   Keep files under **300 lines**. Refactor proactively.
+    *   Break down large React components into smaller, single-responsibility components.
+4.  **Avoid Duplication (DRY):** Actively look for and reuse existing functionality. Refactor to eliminate duplication.
+5.  **No Bazel:** Bazel is not permitted. Use project-specified build tools.
+6.  **Linting/Formatting:** Ensure all code conforms to project's ESLint/Prettier rules.
+7.  **Pattern Consistency:** Adhere to established project patterns. Don't introduce new ones without discussion/explicit instruction. If replacing an old pattern, ensure the old implementation is fully removed.
+8.  **File Naming:** Use clear, descriptive names. Avoid "temp", "refactored", "improved", etc., in permanent file names.
+9.  **No One-Time Scripts:** Do not commit one-time utility scripts into the main codebase.
+
+## 🔒 Security
+ 
+1.  **Server-Side Authority:** Keep sensitive logic, validation, and data manipulation strictly on the server-side. Use secure API endpoints.
+2.  **Input Sanitization/Validation:** Always sanitize and validate user input on the server-side.
+3.  **Dependency Awareness:** Be mindful of the security implications of adding or updating dependencies.
+4.  **Credentials:** Never hardcode secrets or credentials in the codebase. Use environment variables or a secure secrets management solution.
+
+## Extra
+1. Don't write comments if I don't ask you to do so

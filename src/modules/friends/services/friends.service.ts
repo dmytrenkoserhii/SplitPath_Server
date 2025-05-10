@@ -5,10 +5,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { UsersService } from '@/modules/users/services/users.service';
 import { PaginatedResponse } from '@/shared/types';
+import { createPaginatedResponse } from '@/shared/utils';
 
-import { CreateFriendRequestDto } from '../dtos';
+import { FRIEND_ERROR_MESSAGES } from '../constants/error-messages';
+import { CreateFriendRequestDto, GetFriendRequestsDto } from '../dtos';
+import { RequestDirection } from '../dtos/get-friend-requests.dto';
 import { Friend } from '../entities';
 import { FriendStatus } from '../enums';
+import { FriendRequestWhereConditions } from '../types';
 
 interface PaginationOptions {
   page: number;
@@ -29,19 +33,16 @@ export class FriendsService {
     senderId: number,
     createFriendRequestDto: CreateFriendRequestDto,
   ): Promise<Friend> {
-    // Find receiver by email
     const receiver = await this.usersService.findOneByEmail(createFriendRequestDto.email);
 
     if (!receiver) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.NOT_FOUND);
     }
 
-    // Prevent self-friend request
     if (receiver.id === senderId) {
-      throw new BadRequestException('Cannot send friend request to yourself');
+      throw new BadRequestException(FRIEND_ERROR_MESSAGES.SELF_REQUEST);
     }
 
-    // Check if friend request already exists
     const existingRequest = await this.friendsRepository.findOne({
       where: [
         { sender: { id: senderId }, receiver: { id: receiver.id } },
@@ -50,7 +51,7 @@ export class FriendsService {
     });
 
     if (existingRequest) {
-      throw new BadRequestException('Friend request already exists');
+      throw new BadRequestException(FRIEND_ERROR_MESSAGES.DUPLICATE_REQUEST);
     }
 
     const friendRequest = this.friendsRepository.create({
@@ -67,9 +68,8 @@ export class FriendsService {
       relations: ['sender', 'receiver', 'sender.account', 'receiver.account'],
     });
 
-    // TODO: fix
     if (!friendRequestWithRelations) {
-      throw new NotFoundException('Friend request not found');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.NOT_FOUND);
     }
 
     return friendRequestWithRelations;
@@ -86,7 +86,7 @@ export class FriendsService {
     });
 
     if (!friendRequest) {
-      throw new NotFoundException('Friend request not found');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.NOT_FOUND);
     }
 
     friendRequest.status = FriendStatus.ACCEPTED;
@@ -100,7 +100,7 @@ export class FriendsService {
     });
 
     if (!friendRequest) {
-      throw new NotFoundException('Friend request not found');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.NOT_FOUND);
     }
 
     friendRequest.status = FriendStatus.REJECTED;
@@ -121,62 +121,41 @@ export class FriendsService {
       take: limit,
     });
 
-    return this.createPaginatedResponse(items, total, page, limit);
+    return createPaginatedResponse(items, total, page, limit);
   }
 
-  async getPendingIncomingRequests(
+  async getFriendRequests(
     userId: number,
-    { page, limit }: PaginationOptions,
+    { status, direction, page = 1, limit = 10 }: GetFriendRequestsDto,
   ): Promise<PaginatedResponse<Friend>> {
+    const whereConditions: FriendRequestWhereConditions = {};
+
+    if (direction === RequestDirection.INCOMING) {
+      whereConditions.receiver = { id: userId };
+    } else if (direction === RequestDirection.OUTGOING) {
+      whereConditions.sender = { id: userId };
+    } else {
+      // If no direction specified, get both incoming and outgoing
+      whereConditions.where = [{ sender: { id: userId } }, { receiver: { id: userId } }];
+    }
+
+    if (status) {
+      if (whereConditions.where) {
+        whereConditions.where[0].status = status;
+        whereConditions.where[1].status = status;
+      } else {
+        whereConditions.status = status;
+      }
+    }
+
     const [items, total] = await this.friendsRepository.findAndCount({
-      where: { receiver: { id: userId }, status: FriendStatus.PENDING },
+      where: whereConditions.where || whereConditions,
       relations: ['sender', 'receiver', 'sender.account', 'receiver.account'],
       skip: (page - 1) * limit,
       take: limit,
     });
 
-    return this.createPaginatedResponse(items, total, page, limit);
-  }
-
-  async getPendingOutgoingRequests(
-    userId: number,
-    { page, limit }: PaginationOptions,
-  ): Promise<PaginatedResponse<Friend>> {
-    const [items, total] = await this.friendsRepository.findAndCount({
-      where: { sender: { id: userId }, status: FriendStatus.PENDING },
-      relations: ['sender', 'receiver', 'sender.account', 'receiver.account'],
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return this.createPaginatedResponse(items, total, page, limit);
-  }
-
-  async getRejectedIncomingRequests(
-    userId: number,
-    { page, limit }: PaginationOptions,
-  ): Promise<PaginatedResponse<Friend>> {
-    const [items, total] = await this.friendsRepository.findAndCount({
-      where: { receiver: { id: userId }, status: FriendStatus.REJECTED },
-      relations: ['sender', 'receiver', 'sender.account', 'receiver.account'],
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return this.createPaginatedResponse(items, total, page, limit);
-  }
-
-  async getRejectedOutgoingRequests(
-    userId: number,
-    { page, limit }: PaginationOptions,
-  ): Promise<PaginatedResponse<Friend>> {
-    const [items, total] = await this.friendsRepository.findAndCount({
-      where: { sender: { id: userId }, status: FriendStatus.REJECTED },
-      relations: ['sender', 'receiver', 'sender.account', 'receiver.account'],
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    return this.createPaginatedResponse(items, total, page, limit);
+    return createPaginatedResponse(items, total, page, limit);
   }
 
   async areFriends(userId1: number, userId2: number): Promise<boolean> {
@@ -218,46 +197,22 @@ export class FriendsService {
     });
 
     if (!friend) {
-      throw new NotFoundException('Friend not found');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.NOT_FOUND);
     }
 
-    // Soft delete if your entity uses @DeleteDateColumn, otherwise use remove()
     return this.friendsRepository.remove(friend);
   }
 
   async resendFriendRequest(userId: number, requestId: number): Promise<Friend> {
     const friendRequest = await this.friendsRepository.findOne({
-      where: [
-        { id: requestId, sender: { id: userId }, status: FriendStatus.REJECTED },
-        { id: requestId, sender: { id: userId }, status: FriendStatus.ACCEPTED },
-      ],
+      where: [{ id: requestId, sender: { id: userId }, status: FriendStatus.REJECTED }],
     });
 
     if (!friendRequest) {
-      throw new NotFoundException('Friend request not found or cannot be resent');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.NOT_FOUND);
     }
 
     friendRequest.status = FriendStatus.PENDING;
     return this.friendsRepository.save(friendRequest);
-  }
-
-  private createPaginatedResponse<T>(
-    items: T[],
-    total: number,
-    page: number,
-    limit: number,
-  ): PaginatedResponse<T> {
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      items,
-      meta: {
-        total,
-        currentPage: page,
-        itemsPerPage: limit,
-        totalPages,
-        hasNextPage: page < totalPages,
-      },
-    };
   }
 }
