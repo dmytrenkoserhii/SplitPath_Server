@@ -1,9 +1,19 @@
 import { Request } from 'express';
 
-import { Body, Controller, Headers, HttpStatus, Post, RawBodyRequest, Req } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Headers,
+  HttpStatus,
+  Post,
+  RawBodyRequest,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentSession } from '@/modules/auth/decorators';
+import { AccessTokenGuard } from '@/modules/auth/guards';
 
 import { CreateCheckoutDto } from '../dtos/create-checkout.dto';
 import { PaymentsService } from '../services/payments.service';
@@ -15,6 +25,8 @@ export class PaymentsController {
 
   @ApiOperation({ summary: 'Create checkout session' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Checkout session created successfully' })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard)
   @Post('create-checkout')
   async createCheckout(
     @Body() createCheckoutDto: CreateCheckoutDto,
