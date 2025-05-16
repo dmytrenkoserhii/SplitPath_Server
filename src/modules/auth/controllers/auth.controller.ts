@@ -70,7 +70,6 @@ export class AuthController {
     @CurrentSession('sub') sub: number,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('logout', sub);
     await this.authService.logout(sub);
     this.cookiesService.removeCookie(res, CookiesKeys.ACCESS_TOKEN);
     this.cookiesService.removeCookie(res, CookiesKeys.REFRESH_TOKEN);
