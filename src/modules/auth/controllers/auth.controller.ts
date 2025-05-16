@@ -87,13 +87,15 @@ export class AuthController {
   })
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  googleAuthRedirect(
+  async googleAuthRedirect(
     @CurrentSession() session: GoogleAuthPayload,
     @Res({ passthrough: true }) res: Response,
   ) {
     const clientUrl = this.configService.get<string>(`${ENV.CLIENT_URL}`);
 
-    this.authService.setAuthCookies(res, session);
-    res.redirect(`${clientUrl}/auth/sign-in`);
+    const tokens = await this.tokensService.createTokens(session);
+    this.authService.setAuthCookies(res, tokens);
+
+    res.redirect(`${clientUrl}/stories/selection`);
   }
 }

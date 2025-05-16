@@ -57,7 +57,7 @@ export class TokensService {
     userId: number,
     refreshToken: string,
   ): Promise<{ tokens: Tokens; user: User }> {
-    const user = await this.usersService.findOneById(userId, ['refreshToken']);
+    const user = await this.usersService.findOneById(userId, [], ['refreshToken']);
     if (!user || !user.refreshToken) {
       throw new Error('User not found, or refresh token missing');
     }
