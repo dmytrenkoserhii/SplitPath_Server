@@ -17,6 +17,9 @@ export class Account {
   @Column({ unique: true })
   username: string;
 
+  @Column({ nullable: true })
+  avatarUrl: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

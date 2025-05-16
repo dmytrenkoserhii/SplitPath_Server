@@ -26,25 +26,26 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return current user', type: User })
-  @Get(':id')
+  @Get('current')
   public async getCurrent(@CurrentSession('sub') sub: number): Promise<User> {
-    return this.usersService.findOneById(sub);
+    return this.usersService.findOneById(sub, ['account']);
   }
 
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return user by id', type: User })
   @Get(':id')
   public async findOneById(@Param('id') id: number): Promise<User> {
-    return this.usersService.findOneById(id);
+    return this.usersService.findOneById(id, ['account']);
   }
 
   @ApiOperation({ summary: 'Find user by email' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return user by email', type: User })
   @Get('email/:email')
   public async findOneByEmail(@Param('email') email: string): Promise<User | null> {
-    return this.usersService.findOneByEmail(email);
+    return this.usersService.findOneByEmail(email, ['account']);
   }
 
+  // TODO: not sure if we need this endpoint
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User updated successfully', type: User })
   @Patch(':id')

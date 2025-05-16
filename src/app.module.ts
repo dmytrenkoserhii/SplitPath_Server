@@ -5,6 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './modules/database/database.module';
+import { FriendsModule } from './modules/friends/friends.module';
+import { MessagesModule } from './modules/messages/messages.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { UsersModule } from './modules/users/users.module';
@@ -22,10 +24,10 @@ const ENVIRONMENT = process.env.NODE_ENV;
     DatabaseModule,
     UsersModule,
     StoriesModule,
+    MessagesModule,
+    FriendsModule,
     AuthModule,
     PaymentsModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}
