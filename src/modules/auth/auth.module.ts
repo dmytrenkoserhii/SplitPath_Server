@@ -8,7 +8,12 @@ import { SharedModule } from '@/shared/shared.module';
 
 import { AuthController } from './controllers';
 import { AuthService, TokensService } from './services';
-import { AccessTokenStrategy, LocalStrategy, RefreshTokenStrategy } from './strategies';
+import {
+  AccessTokenStrategy,
+  GoogleStrategy,
+  LocalStrategy,
+  RefreshTokenStrategy,
+} from './strategies';
 
 @Module({
   imports: [
@@ -27,6 +32,7 @@ import { AccessTokenStrategy, LocalStrategy, RefreshTokenStrategy } from './stra
     AccessTokenStrategy,
     RefreshTokenStrategy,
     CookiesService,
+    GoogleStrategy,
   ],
   exports: [AuthService, TokensService],
 })

@@ -41,6 +41,9 @@ export class User {
   @Column({ default: false })
   isPremium: boolean;
 
+  @Column({ nullable: true, type: 'text', select: false })
+  oauthId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -54,3 +57,5 @@ export class User {
   @JoinColumn()
   account: Account;
 }
+
+export type UserField = keyof User;

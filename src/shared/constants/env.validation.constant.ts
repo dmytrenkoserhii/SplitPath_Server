@@ -20,4 +20,19 @@ export const ENV_VALIDATION = {
   [ENV.JWT_REFRESH_SECRET]: Joi.string().required(),
   [ENV.JWT_ACCESS_TOKEN_EXPIRATION_TIME]: Joi.string().required(),
   [ENV.JWT_REFRESH_TOKEN_EXPIRATION_TIME]: Joi.string().required(),
+
+  [ENV.GOOGLE_CLIENT_ID]: Joi.string().required(),
+  [ENV.GOOGLE_CLIENT_SECRET]: Joi.string().required(),
+  [ENV.GOOGLE_CALLBACK_URL]: Joi.string().required(),
+
+  [ENV.MAILGUN_KEY]: Joi.string().required(),
+  [ENV.MAILGUN_DOMAIN]: Joi.string().required(),
+  [ENV.EMAIL_SEND_FROM]: Joi.string().required(),
+
+  [ENV.OPENAI_API_KEY]: Joi.string().required(),
+
+  [ENV.LEMON_SQUEEZY_API_URL]: Joi.string().required(),
+  [ENV.LEMON_SQUEEZY_API_KEY]: Joi.string().required(),
+  [ENV.LEMON_SQUEEZY_STORE_ID]: Joi.string().required(),
+  [ENV.LEMON_SQUEEZY_WEBHOOK_SIGNATURE]: Joi.string().required(),
 };

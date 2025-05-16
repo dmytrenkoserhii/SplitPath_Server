@@ -1,14 +1,14 @@
+import { validateOrReject } from 'class-validator';
+
 import * as bcrypt from 'bcrypt';
 import { DeleteResult, In, Repository } from 'typeorm';
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateUserDto, UpdateUserDto } from '../dtos';
-import { User } from '../entities';
+import { CreateUserDto, CreateUserWithoutPasswordDto, UpdateUserDto } from '../dtos';
+import { User, UserField } from '../entities';
 import { AccountService } from './account.service';
-
-type UserField = keyof User;
 
 @Injectable()
 export class UsersService {
@@ -22,14 +22,23 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  public async findOneById(id: number, fieldsToInclude: UserField[] = []): Promise<User> {
+  public async findOneById(
+    id: number,
+    relationsToInclude: UserField[] = [],
+    fieldsToInclude: UserField[] = [],
+  ): Promise<User> {
     let query = this.usersRepository.createQueryBuilder('user').where('user.id = :id', { id });
 
     fieldsToInclude.forEach((field) => {
       query = query.addSelect(`user.${field}`);
     });
 
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`user.${relation}`, relation as string);
+    });
+
     const user = await query.getOne();
+
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -48,6 +57,7 @@ export class UsersService {
 
   public async findOneByEmail(
     email: string,
+    relationsToInclude: UserField[] = [],
     fieldsToInclude: UserField[] = [],
   ): Promise<User | null> {
     let query = this.usersRepository
@@ -58,9 +68,33 @@ export class UsersService {
       query = query.addSelect(`user.${field}`);
     });
 
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`user.${relation}`, relation as string);
+    });
+
     const user = await query.getOne();
 
     return user;
+  }
+
+  public async findOneByOAuthId(
+    oauthId: string,
+    relationsToInclude: UserField[] = [],
+    fieldsToInclude: UserField[] = [],
+  ): Promise<User | null> {
+    let query = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.oauthId = :oauthId', { oauthId });
+
+    fieldsToInclude.forEach((field) => {
+      query = query.addSelect(`user.${field}`);
+    });
+
+    relationsToInclude.forEach((relation) => {
+      query = query.leftJoinAndSelect(`user.${relation}`, relation as string);
+    });
+
+    return query.getOne();
   }
 
   public async create(createUserDto: CreateUserDto): Promise<User> {
@@ -80,6 +114,19 @@ export class UsersService {
     return user;
   }
 
+  public async createWithoutPassword(createUserDto: CreateUserWithoutPasswordDto): Promise<User> {
+    try {
+      await validateOrReject(createUserDto);
+    } catch (errors) {
+      throw new BadRequestException(errors);
+    }
+
+    const user = this.usersRepository.create(createUserDto);
+    await this.usersRepository.save(user);
+
+    return user;
+  }
+
   public async update(id: number, updateData: UpdateUserDto): Promise<User> {
     const user = await this.findOneById(id);
 
@@ -95,7 +142,7 @@ export class UsersService {
   }
 
   public async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.findOneByEmail(email, ['hashedPassword']);
+    const user = await this.findOneByEmail(email, [], ['hashedPassword']);
 
     if (!user) {
       throw new BadRequestException('Invalid credentials');

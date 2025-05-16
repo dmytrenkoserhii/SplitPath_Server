@@ -1,2 +1,2 @@
 export { Account } from './account.entity';
-export { User } from './user.entity';
+export { User, UserField } from './user.entity';

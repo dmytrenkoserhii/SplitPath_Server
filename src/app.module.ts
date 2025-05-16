@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { UsersModule } from './modules/users/users.module';
 import { ENV_VALIDATION } from './shared/constants';
@@ -26,6 +27,7 @@ const ENVIRONMENT = process.env.NODE_ENV;
     MessagesModule,
     FriendsModule,
     AuthModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}
