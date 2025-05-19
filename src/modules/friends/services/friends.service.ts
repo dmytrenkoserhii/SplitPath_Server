@@ -206,6 +206,7 @@ export class FriendsService {
   async resendFriendRequest(userId: number, requestId: number): Promise<Friend> {
     const friendRequest = await this.friendsRepository.findOne({
       where: [{ id: requestId, sender: { id: userId }, status: FriendStatus.REJECTED }],
+      relations: ['sender', 'receiver', 'sender.account', 'receiver.account'],
     });
 
     if (!friendRequest) {
