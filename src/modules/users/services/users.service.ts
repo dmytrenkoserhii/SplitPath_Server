@@ -4,19 +4,45 @@ import * as bcrypt from 'bcrypt';
 import { DeleteResult, In, Repository } from 'typeorm';
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { ENV } from '@/shared/enums';
+import { EmailService } from '@/shared/services';
+
 import { CreateUserDto, CreateUserWithoutPasswordDto, UpdateUserDto } from '../dtos';
+import { ForgotPasswordDto, ResetPasswordDto } from '../dtos';
 import { User, UserField } from '../entities';
+import { ResetPasswordTokenPayload } from '../types';
 import { AccountService } from './account.service';
 
 @Injectable()
 export class UsersService {
+  private readonly emailSendFrom: string;
+  private readonly clientUrl: string;
+  private readonly jwtResetPasswordTokenSecret: string;
+  private readonly jwtResetPasswordTokenExpirationTime: string;
+
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
     private readonly accountService: AccountService,
-  ) {}
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {
+    this.emailSendFrom = this.configService.get<string>(ENV.EMAIL_SEND_FROM, '');
+    this.clientUrl = this.configService.get<string>(ENV.CLIENT_URL, '');
+    this.jwtResetPasswordTokenSecret = this.configService.get<string>(
+      ENV.JWT_RESET_PASSWORD_TOKEN_SECRET,
+      '',
+    );
+    this.jwtResetPasswordTokenExpirationTime = this.configService.get<string>(
+      ENV.JWT_RESET_PASSWORD_TOKEN_EXPIRATION_TIME,
+      '',
+    );
+  }
 
   public async findAll(): Promise<User[]> {
     return this.usersRepository.find();
@@ -158,5 +184,82 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  public async sendPasswordResetEmail(forgotPasswordDto: ForgotPasswordDto) {
+    const user = await this.findOneByEmail(forgotPasswordDto.email, [], ['oauthId']);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.oauthId) {
+      await this.emailService.send({
+        to: forgotPasswordDto.email,
+        from: this.emailSendFrom,
+        subject: 'Sign in using Google',
+        html: `<p>It looks like you signed up using Google. Please continue to sign in using Google. If you're having trouble accessing your account, please contact our support team.</p>`,
+      });
+
+      return;
+    }
+
+    const payload: ResetPasswordTokenPayload = { email: user.email };
+    const resetPasswordToken = this.jwtService.sign(payload, {
+      secret: this.jwtResetPasswordTokenSecret,
+      expiresIn: this.jwtResetPasswordTokenExpirationTime,
+    });
+
+    await this.update(user.id, { resetPasswordToken });
+
+    const resetUrl = `${this.clientUrl}/reset-password?token=${resetPasswordToken}`;
+
+    await this.emailService.send({
+      to: forgotPasswordDto.email,
+      from: this.emailSendFrom,
+      subject: 'Password Reset',
+      html: `<p>Please use the following link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`,
+    });
+  }
+
+  public async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    const email = await this.decodeResetPasswordToken(resetPasswordDto.token);
+    const user = await this.findOneByEmail(email, [], ['resetPasswordToken']);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.resetPasswordToken !== resetPasswordDto.token) {
+      throw new BadRequestException('Invalid token');
+    }
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.password, salt);
+
+    user.hashedPassword = hashedPassword;
+    user.resetPasswordToken = null;
+
+    await this.usersRepository.save(user);
+  }
+
+  private async decodeResetPasswordToken(token: string): Promise<string> {
+    try {
+      const payload = await this.jwtService.verify<ResetPasswordTokenPayload>(token, {
+        secret: this.jwtResetPasswordTokenSecret,
+      });
+
+      if (payload?.email) {
+        return payload.email;
+      }
+
+      throw new BadRequestException('Invalid reset token');
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
+        throw new BadRequestException('Password reset token expired');
+      }
+
+      throw new BadRequestException('Invalid reset token');
+    }
   }
 }

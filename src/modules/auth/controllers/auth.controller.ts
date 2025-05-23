@@ -4,6 +4,8 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } fro
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { ForgotPasswordDto } from '@/modules/users/dtos/forgot-password.dto';
+import { ResetPasswordDto } from '@/modules/users/dtos/reset-password.dto';
 import { CookiesKeys, ENV } from '@/shared/enums';
 import { CookiesService } from '@/shared/services';
 
@@ -98,5 +100,22 @@ export class AuthController {
     this.authService.setAuthCookies(res, tokens);
 
     res.redirect(`${clientUrl}/stories/selection`);
+  }
+
+  @ApiOperation({ summary: 'Send password reset email' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Password reset email sent' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @Post('forgot-password')
+  @Post('forgot-password')
+  public async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    await this.authService.sendPasswordResetEmail(forgotPasswordDto);
+  }
+
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Password reset successfully' })
+  @ApiBody({ type: ResetPasswordDto })
+  @Post('reset-password')
+  public async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<void> {
+    await this.authService.resetPassword(resetPasswordDto);
   }
 }

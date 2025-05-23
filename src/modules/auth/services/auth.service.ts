@@ -2,8 +2,9 @@ import { Response } from 'express';
 
 import { BadRequestException, Injectable } from '@nestjs/common';
 
+import { ForgotPasswordDto, ResetPasswordDto } from '@/modules/users/dtos';
 import { User } from '@/modules/users/entities';
-import { UsersService } from '@/modules/users/services';
+import { AccountService, UsersService, VerificationService } from '@/modules/users/services';
 import { CookiesKeys, TimePeriods } from '@/shared/enums';
 import { CookiesService } from '@/shared/services';
 
@@ -17,15 +18,23 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly tokensService: TokensService,
     private readonly cookiesService: CookiesService,
+    private readonly verificationService: VerificationService,
+    private readonly accountService: AccountService,
   ) {}
 
   public async signUp(signUpDto: SignUpDto): Promise<{ user: User; tokens: Tokens }> {
     const userExists = await this.usersService.findOneByEmail(signUpDto.email);
     if (userExists) {
-      throw new BadRequestException('User already exists');
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    const usernameExists = await this.accountService.findOneByUsername(signUpDto.username);
+    if (usernameExists) {
+      throw new BadRequestException('Username is already taken');
     }
 
     const newUser = await this.usersService.create(signUpDto);
+    await this.verificationService.sendVerificationLink(newUser.email);
     const tokens = await this.generateAndStoreTokens(newUser);
     return { user: newUser, tokens };
   }
@@ -44,6 +53,14 @@ export class AuthService {
     const tokens = await this.tokensService.createTokens(user);
     await this.tokensService.storeRefreshToken(user.id, tokens.refreshToken);
     return tokens;
+  }
+
+  public async sendPasswordResetEmail(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    await this.usersService.sendPasswordResetEmail(forgotPasswordDto);
+  }
+
+  public async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    await this.usersService.resetPassword(resetPasswordDto);
   }
 
   public setAuthCookies(res: Response, tokens: Tokens) {
