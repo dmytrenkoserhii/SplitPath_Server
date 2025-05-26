@@ -3,7 +3,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import { UsersModule } from '@/modules/users/users.module';
-import { CookiesService } from '@/shared/services/cookies.service';
 import { SharedModule } from '@/shared/shared.module';
 
 import { AuthController } from './controllers';
@@ -31,7 +30,6 @@ import {
     LocalStrategy,
     AccessTokenStrategy,
     RefreshTokenStrategy,
-    CookiesService,
     GoogleStrategy,
   ],
   exports: [AuthService, TokensService],
