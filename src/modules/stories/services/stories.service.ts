@@ -1,10 +1,11 @@
 import { DeleteResult, Repository } from 'typeorm';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { PaginatedResponse } from '@/shared/types';
 import { createPaginatedResponse } from '@/shared/utils';
+import { ErrorHandler } from '@/shared/utils';
 
 import { CreateStoryDto, UpdateStoryDto } from '../dtos';
 import { Story, StoryField } from '../entities';
@@ -12,11 +13,15 @@ import { StoryTopicsService } from './story-topics.service';
 
 @Injectable()
 export class StoriesService {
+  private readonly logger = new Logger(StoriesService.name);
+
   constructor(
     @InjectRepository(Story)
     private readonly storyRepository: Repository<Story>,
     private readonly storyTopicsService: StoryTopicsService,
-  ) {}
+  ) {
+    this.logger.log('Stories service initialized');
+  }
 
   async findAllPaginated(
     userId: number,
@@ -24,22 +29,31 @@ export class StoriesService {
     limit: number,
     sort?: string,
   ): Promise<PaginatedResponse<Story>> {
-    const queryBuilder = this.storyRepository
-      .createQueryBuilder('story')
-      .leftJoinAndSelect('story.user', 'user')
-      .leftJoinAndSelect('story.storyTopic', 'storyTopic')
-      .where('user.id = :userId', { userId })
-      .skip((page - 1) * limit)
-      .take(limit);
+    try {
+      this.logger.debug(
+        `Fetching paginated stories for user ${userId} - Page: ${page}, Limit: ${limit}, Sort: ${sort || 'default'}`,
+      );
 
-    if (sort) {
-      const [field, direction] = sort.split(':');
-      queryBuilder.orderBy(`story.${field}`, direction.toUpperCase() as 'ASC' | 'DESC');
+      const queryBuilder = this.storyRepository
+        .createQueryBuilder('story')
+        .leftJoinAndSelect('story.user', 'user')
+        .leftJoinAndSelect('story.storyTopic', 'storyTopic')
+        .where('user.id = :userId', { userId })
+        .skip((page - 1) * limit)
+        .take(limit);
+
+      if (sort) {
+        const [field, direction] = sort.split(':');
+        queryBuilder.orderBy(`story.${field}`, direction.toUpperCase() as 'ASC' | 'DESC');
+      }
+
+      const [items, total] = await queryBuilder.getManyAndCount();
+      this.logger.debug(`Found ${items.length} stories out of ${total} total for user ${userId}`);
+
+      return createPaginatedResponse(items, total, page, limit);
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoriesService.findAllPaginated');
     }
-
-    const [items, total] = await queryBuilder.getManyAndCount();
-
-    return createPaginatedResponse(items, total, page, limit);
   }
 
   async findOneById(
@@ -47,54 +61,80 @@ export class StoriesService {
     relationsToInclude: StoryField[] = [],
     fieldsToInclude: StoryField[] = [],
   ): Promise<Story> {
-    let query = this.storyRepository.createQueryBuilder('story').where('story.id = :id', { id });
+    try {
+      this.logger.debug(`Finding story by ID: ${id}`);
+      let query = this.storyRepository.createQueryBuilder('story').where('story.id = :id', { id });
 
-    fieldsToInclude.forEach((field) => {
-      query = query.addSelect(`story.${field}`);
-    });
+      fieldsToInclude.forEach((field) => {
+        query = query.addSelect(`story.${field}`);
+      });
 
-    relationsToInclude.forEach((relation) => {
-      query = query.leftJoinAndSelect(`story.${relation}`, relation);
-    });
+      relationsToInclude.forEach((relation) => {
+        query = query.leftJoinAndSelect(`story.${relation}`, relation);
+      });
 
-    const story = await query.getOne();
+      const story = await query.getOne();
 
-    if (!story) {
-      throw new NotFoundException(`Story with ID "${id}" not found`);
+      if (!story) {
+        this.logger.warn(`Story with ID ${id} not found`);
+        throw new NotFoundException(`Story with ID "${id}" not found`);
+      }
+
+      this.logger.debug(`Successfully found story: ${id}`);
+      return story;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoriesService.findOneById');
     }
-
-    return story;
   }
 
   async create(createStoryDto: CreateStoryDto): Promise<Story> {
-    const { topicId, userId, ...storyData } = createStoryDto;
+    try {
+      const { topicId, userId, ...storyData } = createStoryDto;
+      this.logger.debug(`Creating new story for user ${userId} with topic ${topicId}`);
 
-    const topic = await this.storyTopicsService.findOneById(topicId);
+      const topic = await this.storyTopicsService.findOneById(topicId);
 
-    const story = this.storyRepository.create({
-      ...storyData,
-      storyTopic: topic,
-      user: { id: userId },
-    });
+      const story = this.storyRepository.create({
+        ...storyData,
+        storyTopic: topic,
+        user: { id: userId },
+      });
 
-    return this.storyRepository.save(story);
+      const savedStory = await this.storyRepository.save(story);
+      this.logger.log(`Story created successfully with ID: ${savedStory.id}`);
+
+      return savedStory;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoriesService.create');
+    }
   }
 
   async update(id: number, updateStoryDto: UpdateStoryDto): Promise<Story> {
-    const story = await this.findOneById(id);
+    try {
+      this.logger.debug(`Updating story: ${id}`);
+      const story = await this.findOneById(id);
 
-    if (!story) {
-      throw new NotFoundException(`Story with ID "${id}" not found`);
+      Object.assign(story, updateStoryDto);
+      const updatedStory = await this.storyRepository.save(story);
+      this.logger.log(`Story ${id} updated successfully`);
+
+      return updatedStory;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoriesService.update');
     }
-
-    Object.assign(story, updateStoryDto);
-
-    return this.storyRepository.save(story);
   }
 
   async remove(id: number): Promise<DeleteResult> {
-    await this.findOneById(id);
+    try {
+      this.logger.debug(`Attempting to remove story: ${id}`);
+      await this.findOneById(id);
 
-    return this.storyRepository.delete(id);
+      const result = await this.storyRepository.delete(id);
+      this.logger.log(`Story ${id} removed successfully`);
+
+      return result;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoriesService.remove');
+    }
   }
 }

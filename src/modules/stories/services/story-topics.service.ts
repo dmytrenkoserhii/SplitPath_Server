@@ -1,48 +1,93 @@
 import { DeleteResult, Repository } from 'typeorm';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+
+import { ErrorHandler } from '@/shared/utils';
 
 import { CreateStoryTopicDto, UpdateStoryTopicDto } from '../dtos';
 import { StoryTopic } from '../entities';
 
 @Injectable()
 export class StoryTopicsService {
+  private readonly logger = new Logger(StoryTopicsService.name);
+
   constructor(
     @InjectRepository(StoryTopic)
     private readonly topicRepository: Repository<StoryTopic>,
-  ) {}
+  ) {
+    this.logger.log('Story topics service initialized');
+  }
 
   async create(createDto: CreateStoryTopicDto): Promise<StoryTopic> {
-    const newTopic = this.topicRepository.create(createDto);
-    return this.topicRepository.save(newTopic);
+    try {
+      this.logger.debug(`Creating new story topic: ${createDto.name}`);
+      const newTopic = this.topicRepository.create(createDto);
+
+      const savedTopic = await this.topicRepository.save(newTopic);
+      this.logger.log(`Story topic created successfully with ID: ${savedTopic.id}`);
+
+      return savedTopic;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoryTopicsService.create');
+    }
   }
 
   async findAll(): Promise<StoryTopic[]> {
-    return this.topicRepository.find();
+    try {
+      this.logger.debug('Fetching available story topics');
+      const topics = await this.topicRepository.find();
+      this.logger.debug(`Retrieved ${topics.length} available story topics`);
+
+      return topics;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoryTopicsService.findAll');
+    }
   }
 
   async findOneById(id: number): Promise<StoryTopic> {
-    const topic = await this.topicRepository.findOneBy({ id });
+    try {
+      this.logger.debug(`Finding story topic by ID: ${id}`);
+      const topic = await this.topicRepository.findOneBy({ id });
 
-    if (!topic) {
-      throw new NotFoundException(`StoryTopic with ID "${id}" not found`);
+      if (!topic) {
+        this.logger.warn(`Story topic with ID ${id} not found`);
+        throw new NotFoundException(`StoryTopic with ID "${id}" not found`);
+      }
+
+      this.logger.debug(`Retrieved story topic: ${topic.name} (ID: ${id})`);
+      return topic;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoryTopicsService.findOneById');
     }
-
-    return topic;
   }
 
   async update(id: number, updateDto: UpdateStoryTopicDto): Promise<StoryTopic> {
-    const topic = await this.findOneById(id);
+    try {
+      this.logger.debug(`Updating story topic: ${id}`);
+      const topic = await this.findOneById(id);
 
-    Object.assign(topic, updateDto);
+      Object.assign(topic, updateDto);
+      const updatedTopic = await this.topicRepository.save(topic);
+      this.logger.log(`Story topic ${id} updated successfully`);
 
-    return this.topicRepository.save(topic);
+      return updatedTopic;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoryTopicsService.update');
+    }
   }
 
   async remove(id: number): Promise<DeleteResult> {
-    await this.findOneById(id);
+    try {
+      this.logger.debug(`Attempting to remove story topic: ${id}`);
+      await this.findOneById(id);
 
-    return this.topicRepository.delete(id);
+      const result = await this.topicRepository.delete(id);
+      this.logger.log(`Story topic ${id} removed successfully`);
+
+      return result;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'StoryTopicsService.remove');
+    }
   }
 }
