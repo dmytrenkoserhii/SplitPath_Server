@@ -4,8 +4,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } fro
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { ForgotPasswordDto } from '@/modules/users/dtos/forgot-password.dto';
-import { ResetPasswordDto } from '@/modules/users/dtos/reset-password.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from '@/modules/users/dtos';
 import { CookiesKeys, ENV } from '@/shared/enums';
 import { CookiesService } from '@/shared/services';
 
@@ -79,8 +78,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Authenticate with Google' })
   @ApiResponse({ status: HttpStatus.FOUND, description: 'Redirect to Google authentication' })
-  @Get('google')
   @UseGuards(GoogleOAuthGuard)
+  @Get('google')
   public async googleAuth() {}
 
   @ApiOperation({ summary: 'Google authentication callback' })
@@ -88,8 +87,8 @@ export class AuthController {
     status: HttpStatus.OK,
     description: 'User successfully authenticated with Google',
   })
-  @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
+  @Get('google/callback')
   async googleAuthRedirect(
     @CurrentSession() session: GoogleAuthPayload,
     @Res({ passthrough: true }) res: Response,
@@ -105,7 +104,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Send password reset email' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Password reset email sent' })
   @ApiBody({ type: ForgotPasswordDto })
-  @Post('forgot-password')
   @Post('forgot-password')
   public async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<void> {
     await this.authService.sendPasswordResetEmail(forgotPasswordDto);

@@ -4,6 +4,6 @@ export { CreateAccountDto } from './create-account.dto';
 export { UpdateAccountDto } from './update-account.dto';
 export { CreateUserWithoutPasswordDto } from './create-user-without-password.dto';
 export { CreateAccountWithGoogleAuthDto } from './create-account-with-google-auth.dto';
-export { ConfirmEmailDto } from './confirm-email.dto';
+export { VerifyEmailDto } from './verify-email.dto';
 export { ForgotPasswordDto } from './forgot-password.dto';
 export { ResetPasswordDto } from './reset-password.dto';

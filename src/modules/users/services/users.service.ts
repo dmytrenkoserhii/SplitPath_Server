@@ -85,7 +85,7 @@ export class UsersService {
     email: string,
     relationsToInclude: UserField[] = [],
     fieldsToInclude: UserField[] = [],
-  ): Promise<User | null> {
+  ): Promise<User> {
     let query = this.usersRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email });
@@ -99,6 +99,10 @@ export class UsersService {
     });
 
     const user = await query.getOne();
+
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
 
     return user;
   }
@@ -170,10 +174,6 @@ export class UsersService {
   public async validateUser(email: string, password: string): Promise<User> {
     const user = await this.findOneByEmail(email, [], ['hashedPassword']);
 
-    if (!user) {
-      throw new BadRequestException('Invalid credentials');
-    }
-
     if (!user.hashedPassword) {
       throw new BadRequestException('Invalid credentials');
     }
@@ -189,10 +189,8 @@ export class UsersService {
   public async sendPasswordResetEmail(forgotPasswordDto: ForgotPasswordDto) {
     const user = await this.findOneByEmail(forgotPasswordDto.email, [], ['oauthId']);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
+    // TODO: Add a logic to show a message to the user in the moment when he tries to reset a password for google account.
+    // Instead of sending an email.
     if (user.oauthId) {
       await this.emailService.send({
         to: forgotPasswordDto.email,
@@ -226,10 +224,6 @@ export class UsersService {
     const email = await this.decodeResetPasswordToken(resetPasswordDto.token);
     const user = await this.findOneByEmail(email, [], ['resetPasswordToken']);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
     if (user.resetPasswordToken !== resetPasswordDto.token) {
       throw new BadRequestException('Invalid token');
     }
@@ -249,11 +243,11 @@ export class UsersService {
         secret: this.jwtResetPasswordTokenSecret,
       });
 
-      if (payload?.email) {
-        return payload.email;
+      if (!payload?.email) {
+        throw new BadRequestException('Invalid reset token');
       }
 
-      throw new BadRequestException('Invalid reset token');
+      return payload.email;
     } catch (error) {
       if (error instanceof Error && error.name === 'TokenExpiredError') {
         throw new BadRequestException('Password reset token expired');

@@ -34,7 +34,7 @@ export class AuthService {
     }
 
     const newUser = await this.usersService.create(signUpDto);
-    await this.verificationService.sendVerificationLink(newUser.email);
+    await this.verificationService.sendVerificationLink(newUser.id);
     const tokens = await this.generateAndStoreTokens(newUser);
     return { user: newUser, tokens };
   }

@@ -13,11 +13,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CurrentSession } from '@/modules/auth/decorators/current-session.decorator';
-import { AccessTokenGuard } from '@/modules/auth/guards';
+import { CurrentSession, Roles } from '@/modules/auth/decorators';
+import { AccessTokenGuard, RolesGuard } from '@/modules/auth/guards';
 
-import { ConfirmEmailDto, UpdateUserDto } from '../dtos';
+import { UpdateUserDto, VerifyEmailDto } from '../dtos';
 import { User } from '../entities';
+import { Role } from '../enums/role.enum';
 import { UsersService, VerificationService } from '../services';
 
 @ApiTags('Users')
@@ -30,36 +31,37 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Find all users' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return all users', type: [User] })
-  @Get()
   @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get()
   public findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
 
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return current user', type: User })
-  @Get('current')
   @ApiBearerAuth()
   @UseGuards(AccessTokenGuard)
+  @Get('current')
   public async getCurrent(@CurrentSession('sub') sub: number): Promise<User> {
     return this.usersService.findOneById(sub, ['account']);
   }
 
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return user by id', type: User })
-  @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AccessTokenGuard)
+  @Get(':id')
   public async findOneById(@Param('id') id: number): Promise<User> {
     return this.usersService.findOneById(id, ['account']);
   }
 
   @ApiOperation({ summary: 'Find user by email' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return user by email', type: User })
-  @Get('email/:email')
   @ApiBearerAuth()
   @UseGuards(AccessTokenGuard)
+  @Get('email/:email')
   public async findOneByEmail(@Param('email') email: string): Promise<User | null> {
     return this.usersService.findOneByEmail(email, ['account']);
   }
@@ -67,9 +69,9 @@ export class UsersController {
   // TODO: not sure if we need this endpoint
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User updated successfully', type: User })
-  @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AccessTokenGuard)
+  @Patch(':id')
   public async update(
     @Param('id') id: number,
     @Body() updateUserDto: UpdateUserDto,
@@ -79,19 +81,20 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User deleted successfully' })
-  @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Delete(':id')
   public async delete(@Param('id') id: number): Promise<DeleteResult> {
     return this.usersService.deleteById(id);
   }
 
   @ApiOperation({ summary: 'Verify email with token' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Email verified successfully' })
-  @ApiBody({ type: ConfirmEmailDto })
+  @ApiBody({ type: VerifyEmailDto })
   @Post('verify-email')
-  public async confirmEmail(@Body() confirmEmailDto: ConfirmEmailDto): Promise<void> {
-    await this.verificationService.confirmEmail(confirmEmailDto);
+  public async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<void> {
+    await this.verificationService.verifyEmail(verifyEmailDto);
   }
 
   @ApiOperation({ summary: 'Resend verification email' })
@@ -100,6 +103,6 @@ export class UsersController {
   @UseGuards(AccessTokenGuard)
   @Get('resend-verification')
   public async resendVerificationEmail(@CurrentSession('sub') sub: number): Promise<void> {
-    await this.verificationService.resendConfirmationLink(sub);
+    await this.verificationService.sendVerificationLink(sub);
   }
 }
