@@ -10,7 +10,7 @@ import { ErrorHandler } from '@/shared/utils';
 
 import { CreatePrivateMessageDto } from '../dtos';
 import { Message } from '../entities';
-import { ConversationPreview } from '../types';
+import { ChatPreview } from '../types';
 
 interface GetConversationOptions {
   page: number;
@@ -28,7 +28,7 @@ export class PrivateMessagesService {
     private readonly usersService: UsersService,
   ) {}
 
-  async findConversation(
+  async findChat(
     userId1: number,
     userId2: number,
     options: GetConversationOptions,
@@ -50,6 +50,7 @@ export class PrivateMessagesService {
         take: options.limit,
         relations: ['from', 'from.account', 'to', 'to.account'],
       });
+      console.log(messages);
 
       return {
         items: messages,
@@ -62,7 +63,7 @@ export class PrivateMessagesService {
         },
       };
     } catch (error: unknown) {
-      ErrorHandler.handle(error, this.logger, 'PrivateMessagesService.findConversation');
+      ErrorHandler.handle(error, this.logger, 'PrivateMessagesService.findChat');
     }
   }
 
@@ -92,7 +93,10 @@ export class PrivateMessagesService {
     }
   }
 
-  async create(fromUserId: number, createMessageDto: CreatePrivateMessageDto): Promise<Message> {
+  async createMessage(
+    fromUserId: number,
+    createMessageDto: CreatePrivateMessageDto,
+  ): Promise<Message> {
     try {
       // Verify friendship status
       const areFriends = await this.friendsService.areFriends(
@@ -186,7 +190,7 @@ export class PrivateMessagesService {
   // It retrieves the latest message for each unique conversation
   // and returns a limited number of these latest messages, ordered by the creation date of the latest message
   // in each conversation.
-  async getConversationPreviews(userId: number, limit = 20): Promise<ConversationPreview[]> {
+  async getChatsPreviews(userId: number, limit = 20): Promise<ChatPreview[]> {
     try {
       // This query retrieves the latest message for each unique conversation
       // involving a specific user (identified by the first parameter, $1),
@@ -280,7 +284,7 @@ export class PrivateMessagesService {
         };
       });
     } catch (error: unknown) {
-      ErrorHandler.handle(error, this.logger, 'PrivateMessagesService.getConversationPreviews');
+      ErrorHandler.handle(error, this.logger, 'PrivateMessagesService.getChatsPreviews');
     }
   }
 }

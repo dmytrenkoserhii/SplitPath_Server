@@ -6,12 +6,12 @@ import { UsersModule } from '@/modules/users/users.module';
 
 import { PrivateMessagesController } from './controllers';
 import { Message } from './entities';
-import { PrivateChatGateway } from './gateways';
+import { PrivateChatsGateway } from './gateways';
 import { PrivateMessagesService } from './services';
 
 @Module({
   imports: [UsersModule, FriendsModule, TypeOrmModule.forFeature([Message])],
   controllers: [PrivateMessagesController],
-  providers: [PrivateMessagesService, PrivateChatGateway],
+  providers: [PrivateMessagesService, PrivateChatsGateway],
 })
 export class MessagesModule {}

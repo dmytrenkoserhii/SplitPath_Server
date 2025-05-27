@@ -1,1 +1,1 @@
-export * from './private-chat.gateway';
+export * from './private-chats.gateway';

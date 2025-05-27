@@ -18,9 +18,9 @@ import { PaginatedResponse } from '@/shared/types';
 
 import { CreatePrivateMessageDto } from '../dtos';
 import { Message } from '../entities';
-import { PrivateChatGateway } from '../gateways';
+import { PrivateChatsGateway } from '../gateways';
 import { PrivateMessagesService } from '../services';
-import { ConversationPreview } from '../types';
+import { ChatPreview } from '../types';
 
 @ApiTags('Private Messages')
 @Controller('private-messages')
@@ -29,54 +29,40 @@ import { ConversationPreview } from '../types';
 export class PrivateMessagesController {
   constructor(
     private readonly privateMessagesService: PrivateMessagesService,
-    private readonly privateChatGateway: PrivateChatGateway,
+    private readonly privateChatsGateway: PrivateChatsGateway,
   ) {}
 
-  @Get('conversations')
-  async getConversationPreviews(
+  @Get('chats')
+  async getChatsPreviews(
     @CurrentSession('sub') sub: number,
     @Query('limit', ParseIntPipe) limit = 20,
-  ): Promise<ConversationPreview[]> {
-    return this.privateMessagesService.getConversationPreviews(sub, limit);
+  ): Promise<ChatPreview[]> {
+    return this.privateMessagesService.getChatsPreviews(sub, limit);
   }
 
-  @Get('conversations/:friendId')
-  async findConversation(
+  @Get('chats/:friendId')
+  async findChat(
     @CurrentSession('sub') sub: number,
     @Param('friendId', ParseIntPipe) friendId: number,
     @Query('page', ParseIntPipe) page = 1,
     @Query('limit', ParseIntPipe) limit = 20,
   ): Promise<PaginatedResponse<Message>> {
-    return this.privateMessagesService.findConversation(sub, friendId, {
+    return this.privateMessagesService.findChat(sub, friendId, {
       page,
       limit,
     });
   }
 
   @Post()
-  async create(
+  async createMessage(
     @CurrentSession('sub') sub: number,
     @Body() createMessageDto: CreatePrivateMessageDto,
   ) {
-    const message = await this.privateMessagesService.create(sub, createMessageDto);
+    const message = await this.privateMessagesService.createMessage(sub, createMessageDto);
 
-    await this.privateChatGateway.notifyNewMessage(message);
+    await this.privateChatsGateway.notifyNewMessage(message);
 
     return message;
-  }
-
-  @Post('mark-as-read/:messageId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async markAsRead(
-    @CurrentSession('sub') sub: number,
-    @Param('messageId', ParseIntPipe) messageId: number,
-  ): Promise<void> {
-    const message = await this.privateMessagesService.markAsRead(sub, messageId);
-
-    // Notify clients about read status change
-    if (message) {
-      await this.privateChatGateway.notifyMessageRead(message, sub);
-    }
   }
 
   @Post('mark-multiple-read')
@@ -87,12 +73,10 @@ export class PrivateMessagesController {
   ): Promise<void> {
     await this.privateMessagesService.markMultipleAsRead(messageIds, sub);
 
-    // Fetch all messages in a single query instead of one by one
     const messages = await this.privateMessagesService.findMessagesByIds(messageIds);
 
-    // Notify clients about read status changes
-    for (const message of messages) {
-      await this.privateChatGateway.notifyMessageRead(message, sub);
+    if (messages.length > 0) {
+      await this.privateChatsGateway.notifyMessagesRead(messages, sub);
     }
   }
 
@@ -102,18 +86,15 @@ export class PrivateMessagesController {
     @CurrentSession('sub') sub: number,
     @Param('fromUserId', ParseIntPipe) fromUserId: number,
   ): Promise<void> {
-    // First get all unread messages before marking them as read
     const unreadMessages = await this.privateMessagesService.findUnreadMessagesFrom(
       fromUserId,
       sub,
     );
 
-    // Mark all as read
     await this.privateMessagesService.markAllAsRead(sub, fromUserId);
 
-    // Notify about all read messages
-    for (const message of unreadMessages) {
-      await this.privateChatGateway.notifyMessageRead(message, sub);
+    if (unreadMessages.length > 0) {
+      await this.privateChatsGateway.notifyMessagesRead(unreadMessages, sub);
     }
   }
 }

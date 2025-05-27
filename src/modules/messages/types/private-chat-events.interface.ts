@@ -18,19 +18,14 @@ export interface TypingStatus {
   isTyping: boolean;
 }
 
-export type SendPrivateMessagePayload = {
-  content: string;
-  receiverId: string;
-};
-
 export type MessageReadPayload = {
-  messageId: string;
-  userId: string;
+  messageId: number;
+  userId: number;
   readAt: Date;
 };
 
 export type TypingStatusChangePayload = {
-  receiverId: string;
+  receiverId: number;
   isTyping: boolean;
 };
 
@@ -41,7 +36,5 @@ export interface PrivateChatEmitEvents {
 }
 
 export interface PrivateChatListenEvents {
-  send_private_message: (payload: SendPrivateMessagePayload) => void;
-  mark_message_read: (payload: MessageReadPayload) => void;
   typing_status_change: (payload: TypingStatusChangePayload) => void;
 }

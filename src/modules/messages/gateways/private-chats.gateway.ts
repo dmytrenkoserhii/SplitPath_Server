@@ -17,26 +17,21 @@ import { ErrorHandler } from '@/shared/utils';
 
 import { Message } from '../entities';
 import { PrivateMessagesService } from '../services';
-import {
-  MessageReadPayload,
-  PrivateChatEmitEvents,
-  SendPrivateMessagePayload,
-  TypingStatusChangePayload,
-} from '../types';
+import { MessageReadPayload, PrivateChatEmitEvents, TypingStatusChangePayload } from '../types';
 
 @WebSocketGateway({
-  namespace: 'private-chat',
+  namespace: 'private-chats',
   cors: {
     origin: process.env.CLIENT_URL,
     credentials: true,
   },
 })
 @UseGuards(WsJwtGuard)
-export class PrivateChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PrivateChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private server: Server<any, PrivateChatEmitEvents>;
-  private readonly logger = new Logger(PrivateChatGateway.name);
+  private readonly logger = new Logger(PrivateChatsGateway.name);
   private userSocketMap: Map<string, Socket> = new Map();
 
   constructor(private readonly privateMessagesService: PrivateMessagesService) {}
@@ -58,44 +53,45 @@ export class PrivateChatGateway implements OnGatewayConnection, OnGatewayDisconn
   }
 
   async notifyNewMessage(message: Message) {
-    const privateMessage = {
-      id: message.id.toString(),
-      content: message.content,
-      senderId: message.from.id.toString(),
-      receiverId: message.to.id.toString(),
-      createdAt: message.createdAt,
-    };
-
     // Notify sender
     const senderSocket = this.userSocketMap.get(message.from.id.toString());
     if (senderSocket) {
-      senderSocket.emit('new_private_message', privateMessage);
+      senderSocket.emit('new_private_message', message);
     }
 
     // Notify receiver
     const receiverSocket = this.userSocketMap.get(message.to.id.toString());
     if (receiverSocket) {
-      receiverSocket.emit('new_private_message', privateMessage);
+      receiverSocket.emit('new_private_message', message);
     }
   }
 
-  async notifyMessageRead(message: Message, readerUserId: number) {
-    const readStatus = {
-      messageId: message.id.toString(),
-      userId: readerUserId.toString(),
+  async notifyMessagesRead(messages: Message[], readerUserId: number) {
+    const readStatuses: MessageReadPayload[] = messages.map((message) => ({
+      messageId: message.id,
+      userId: readerUserId,
       readAt: new Date(),
-    };
+    }));
 
-    // Notify the reader if they're online
+    // TODO
+    // Collect unique sender IDs to notify them
+    const uniqueSenderIds = new Set<string>();
+    messages.forEach((message) => {
+      if (message.from.id !== readerUserId) {
+        uniqueSenderIds.add(message.from.id.toString());
+      }
+    });
+
     const readerSocket = this.userSocketMap.get(readerUserId.toString());
     if (readerSocket) {
-      readerSocket.emit('message_read', readStatus);
+      readerSocket.emit('messages_read', readStatuses);
     }
 
-    // Notify the sender if they're online
-    const senderSocket = this.userSocketMap.get(message.from.id.toString());
-    if (senderSocket && message.from.id !== readerUserId) {
-      senderSocket.emit('message_read', readStatus);
+    for (const senderId of uniqueSenderIds) {
+      const senderSocket = this.userSocketMap.get(senderId);
+      if (senderSocket) {
+        senderSocket.emit('messages_read', readStatuses);
+      }
     }
   }
 
@@ -107,13 +103,11 @@ export class PrivateChatGateway implements OnGatewayConnection, OnGatewayDisconn
     try {
       const userId = client.data.user.sub;
       const typingStatus = {
-        userId: userId.toString(),
-        receiverId: payload.receiverId,
-        isTyping: payload.isTyping,
+        userId,
+        ...payload,
       };
 
-      // Emit typing status to receiver if online
-      const receiverSocket = this.userSocketMap.get(payload.receiverId);
+      const receiverSocket = this.userSocketMap.get(payload.receiverId.toString());
       if (receiverSocket) {
         receiverSocket.emit('typing_status', typingStatus);
       }

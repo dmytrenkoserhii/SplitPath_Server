@@ -1,4 +1,4 @@
-export interface ConversationPreview {
+export interface ChatPreview {
   userId: number;
   username: string;
   avatarUrl?: string;
