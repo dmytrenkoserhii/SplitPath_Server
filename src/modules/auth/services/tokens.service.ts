@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -8,11 +8,13 @@ import { User } from '@/modules/users/entities';
 import { Role } from '@/modules/users/enums';
 import { UsersService } from '@/modules/users/services';
 import { ENV } from '@/shared/enums';
+import { ErrorHandler } from '@/shared/utils';
 
 import { Tokens } from '../types';
 
 @Injectable()
 export class TokensService {
+  private readonly logger = new Logger(TokensService.name);
   private readonly jwtAccessSecret: string;
   private readonly jwtRefreshSecret: string;
   private readonly jwtAccessTokenExpirationTime: string;
@@ -36,53 +38,83 @@ export class TokensService {
   }
 
   public async createTokens(user: User): Promise<Tokens> {
-    const accessToken = await this.createAccessToken(
-      user.id,
-      user.email,
-      user.role,
-      user.isEmailVerified,
-    );
+    try {
+      this.logger.debug(`Creating token pair for user: ${user.id}`);
 
-    const refreshToken = await this.createRefreshToken(
-      user.id,
-      user.email,
-      user.role,
-      user.isEmailVerified,
-    );
+      const accessToken = await this.createAccessToken(
+        user.id,
+        user.email,
+        user.role,
+        user.isEmailVerified,
+      );
 
-    return { accessToken, refreshToken };
+      const refreshToken = await this.createRefreshToken(
+        user.id,
+        user.email,
+        user.role,
+        user.isEmailVerified,
+      );
+
+      this.logger.debug(`Token pair created successfully for user: ${user.id}`);
+      return { accessToken, refreshToken };
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.createTokens');
+    }
   }
 
   public async refreshTokens(
     userId: number,
     refreshToken: string,
   ): Promise<{ tokens: Tokens; user: User }> {
-    const user = await this.usersService.findOneById(userId, [], ['refreshToken']);
-    if (!user || !user.refreshToken) {
-      throw new Error('User not found, or refresh token missing');
+    try {
+      this.logger.debug(`Attempting to refresh tokens for user: ${userId}`);
+
+      const user = await this.usersService.findOneById(userId, [], ['refreshToken']);
+      if (!user || !user.refreshToken) {
+        this.logger.warn(
+          `Token refresh failed - user not found or refresh token missing: ${userId}`,
+        );
+        throw new Error('User not found, or refresh token missing');
+      }
+
+      const isValid = await this.verifyRefreshToken(refreshToken, user.refreshToken);
+      if (!isValid) {
+        this.logger.warn(`Token refresh failed - invalid refresh token for user: ${userId}`);
+        throw new Error('Refresh token is invalid');
+      }
+
+      const tokens = await this.createTokens(user);
+      await this.storeRefreshToken(user.id, tokens.refreshToken);
+
+      this.logger.debug(`Tokens refreshed successfully for user: ${userId}`);
+      return { user, tokens };
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.refreshTokens');
     }
-
-    const isValid = await this.verifyRefreshToken(refreshToken, user.refreshToken);
-    if (!isValid) {
-      throw new Error('Refresh token is invalid');
-    }
-
-    const tokens = await this.createTokens(user);
-    await this.storeRefreshToken(user.id, tokens.refreshToken);
-
-    return { user, tokens };
   }
 
   public async removeRefreshToken(userId: number): Promise<void> {
-    await this.usersService.update(userId, { refreshToken: null });
+    try {
+      this.logger.debug(`Removing refresh token for user: ${userId}`);
+      await this.usersService.update(userId, { refreshToken: null });
+      this.logger.debug(`Refresh token removed successfully for user: ${userId}`);
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.removeRefreshToken');
+    }
   }
 
   public async storeRefreshToken(userId: number, refreshToken: string): Promise<void> {
-    const salt = await bcrypt.genSalt();
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
-    await this.usersService.update(userId, {
-      refreshToken: hashedRefreshToken,
-    });
+    try {
+      this.logger.debug(`Storing new refresh token for user: ${userId}`);
+      const salt = await bcrypt.genSalt();
+      const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
+      await this.usersService.update(userId, {
+        refreshToken: hashedRefreshToken,
+      });
+      this.logger.debug(`Refresh token stored successfully for user: ${userId}`);
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.storeRefreshToken');
+    }
   }
 
   private async createAccessToken(
@@ -91,13 +123,20 @@ export class TokensService {
     role: Role,
     isEmailVerified: boolean,
   ): Promise<string> {
-    return this.jwtService.signAsync(
-      { sub: userId, email, role, isEmailVerified },
-      {
-        secret: this.jwtAccessSecret,
-        expiresIn: this.jwtAccessTokenExpirationTime,
-      },
-    );
+    try {
+      this.logger.debug(`Creating access token for user: ${userId}`);
+      const token = await this.jwtService.signAsync(
+        { sub: userId, email, role, isEmailVerified },
+        {
+          secret: this.jwtAccessSecret,
+          expiresIn: this.jwtAccessTokenExpirationTime,
+        },
+      );
+      this.logger.debug(`Access token created successfully for user: ${userId}`);
+      return token;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.createAccessToken');
+    }
   }
 
   private async createRefreshToken(
@@ -106,19 +145,34 @@ export class TokensService {
     role: Role,
     isEmailVerified: boolean,
   ): Promise<string> {
-    const refreshToken = await this.jwtService.signAsync(
-      { sub: userId, email, role, isEmailVerified },
-      {
-        secret: this.jwtRefreshSecret,
-        expiresIn: this.jwtRefreshTokenExpirationTime,
-      },
-    );
+    try {
+      this.logger.debug(`Creating refresh token for user: ${userId}`);
+      const refreshToken = await this.jwtService.signAsync(
+        { sub: userId, email, role, isEmailVerified },
+        {
+          secret: this.jwtRefreshSecret,
+          expiresIn: this.jwtRefreshTokenExpirationTime,
+        },
+      );
 
-    await this.storeRefreshToken(userId, refreshToken);
-    return refreshToken;
+      await this.storeRefreshToken(userId, refreshToken);
+      this.logger.debug(`Refresh token created successfully for user: ${userId}`);
+      return refreshToken;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.createRefreshToken');
+    }
   }
 
   private async verifyRefreshToken(providedToken: string, storedToken: string): Promise<boolean> {
-    return bcrypt.compare(providedToken, storedToken);
+    try {
+      this.logger.debug('Verifying refresh token');
+      const isValid = await bcrypt.compare(providedToken, storedToken);
+      if (!isValid) {
+        this.logger.warn('Refresh token verification failed');
+      }
+      return isValid;
+    } catch (error: unknown) {
+      ErrorHandler.handle(error, this.logger, 'TokensService.verifyRefreshToken');
+    }
   }
 }

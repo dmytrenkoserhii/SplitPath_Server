@@ -30,7 +30,7 @@ export class Story {
   })
   status: StoryStatus;
 
-  @ManyToOne(() => User, (user) => user.stories)
+  @ManyToOne(() => User, (user) => user.stories, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
 

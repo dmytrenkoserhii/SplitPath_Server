@@ -44,6 +44,12 @@ export class User {
   @Column({ nullable: true, type: 'text', select: false })
   oauthId: string;
 
+  @Column({ nullable: true, type: 'text', select: false })
+  emailVerificationToken: string | null;
+
+  @Column({ nullable: true, type: 'text', select: false })
+  resetPasswordToken: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
