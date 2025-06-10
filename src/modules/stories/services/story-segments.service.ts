@@ -33,6 +33,7 @@ export class StorySegmentsService {
 
       const savedSegment = await this.segmentRepository.save(newSegment);
       this.logger.log(`Story segment created successfully with ID: ${savedSegment.id}`);
+      console.log(savedSegment);
 
       return savedSegment;
     } catch (error: unknown) {
@@ -68,6 +69,8 @@ export class StorySegmentsService {
         );
         throw new BadRequestException(`Invalid choice "${updateDto.selectedChoice}" selected.`);
       }
+
+      Object.assign(segment, updateDto);
 
       const updatedSegment = await this.segmentRepository.save(segment);
       this.logger.log(`Story segment ${segmentId} updated successfully`);

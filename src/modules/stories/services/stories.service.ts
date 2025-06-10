@@ -87,17 +87,16 @@ export class StoriesService {
     }
   }
 
-  async create(createStoryDto: CreateStoryDto): Promise<Story> {
+  async create(createStoryDto: CreateStoryDto, sub: number): Promise<Story> {
     try {
-      const { topicId, userId, ...storyData } = createStoryDto;
-      this.logger.debug(`Creating new story for user ${userId} with topic ${topicId}`);
+      this.logger.debug(`Creating new story for user ${sub} with topic ${createStoryDto.topicId}`);
 
-      const topic = await this.storyTopicsService.findOneById(topicId);
+      const topic = await this.storyTopicsService.findOneById(createStoryDto.topicId);
 
       const story = this.storyRepository.create({
-        ...storyData,
+        title: createStoryDto.title,
         storyTopic: topic,
-        user: { id: userId },
+        user: { id: sub },
       });
 
       const savedStory = await this.storyRepository.save(story);

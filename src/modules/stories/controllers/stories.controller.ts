@@ -19,9 +19,9 @@ import { AccessTokenGuard } from '@/modules/auth/guards';
 import { PaginatedResponse } from '@/shared/types';
 
 import { PAGINATED_STORIES_RESPONSE_EXAMPLE, STORY_RESPONSE_EXAMPLE } from '../constants';
-import { CreateStoryDto, UpdateStoryDto } from '../dtos';
-import { Story } from '../entities';
-import { StoriesAIService, StoriesService } from '../services';
+import { CreateStoryDto, UpdateStoryDto, UpdateStorySegmentDto } from '../dtos';
+import { Story, StorySegment } from '../entities';
+import { StoriesAIService, StoriesService, StorySegmentsService } from '../services';
 
 @ApiTags('Stories')
 @Controller('stories')
@@ -31,6 +31,7 @@ export class StoriesController {
   constructor(
     private readonly storiesService: StoriesService,
     private readonly storiesAiService: StoriesAIService,
+    private readonly storySegmentsService: StorySegmentsService,
   ) {}
 
   @Get()
@@ -65,7 +66,7 @@ export class StoriesController {
     },
   })
   findOneById(@Param('id', ParseIntPipe) id: number) {
-    return this.storiesService.findOneById(id);
+    return this.storiesService.findOneById(id, ['segments', 'storyTopic']);
   }
 
   @Post()
@@ -79,8 +80,11 @@ export class StoriesController {
       },
     },
   })
-  create(@Body() createStoryDto: CreateStoryDto) {
-    return this.storiesService.create(createStoryDto);
+  create(
+    @CurrentSession('sub') sub: number,
+    @Body() createStoryDto: CreateStoryDto,
+  ): Promise<Story> {
+    return this.storiesService.create(createStoryDto, sub);
   }
 
   @Patch(':id')
@@ -98,25 +102,42 @@ export class StoriesController {
     return this.storiesService.update(id, updateStoryDto);
   }
 
+  @Patch(':storyId/segments/:segmentId')
+  @ApiOperation({ summary: 'Update story segment' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Story segment updated successfully',
+    type: StorySegment,
+  })
+  updateSegment(
+    @Param('storyId', ParseIntPipe) storyId: number,
+    @Param('segmentId', ParseIntPipe) segmentId: number,
+    @Body() updateDto: UpdateStorySegmentDto,
+  ): Promise<StorySegment> {
+    return this.storySegmentsService.update(segmentId, updateDto);
+  }
+
   @Post(':id/segments/generate-initial')
   @ApiOperation({ summary: 'Generate initial story segment' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Initial story segment generated successfully',
+    description: 'Initial story segment generated and saved successfully',
+    type: StorySegment,
   })
-  async generateInitialSegment(@Param('id', ParseIntPipe) id: number) {
-    const story = await this.storiesService.findOneById(id, ['storyTopic', 'segments']);
-    return this.storiesAiService.generateSegment(story.storyTopic);
+  async generateInitialSegment(@Param('id', ParseIntPipe) id: number): Promise<StorySegment> {
+    const story = await this.storiesService.findOneById(id, ['storyTopic']);
+    return this.storiesAiService.generateAndSaveInitialSegment(id, story.storyTopic);
   }
 
   @Post(':id/segments/generate-next')
   @ApiOperation({ summary: 'Generate next story segment' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Next story segment generated successfully',
+    description: 'Next story segment generated and saved successfully',
+    type: StorySegment,
   })
-  async generateNextSegment(@Param('id', ParseIntPipe) id: number) {
+  async generateNextSegment(@Param('id', ParseIntPipe) id: number): Promise<StorySegment> {
     const story = await this.storiesService.findOneById(id, ['storyTopic', 'segments']);
-    return this.storiesAiService.generateSegment(story.storyTopic, story.segments);
+    return this.storiesAiService.generateAndSaveNextSegment(id, story.storyTopic, story.segments);
   }
 }
