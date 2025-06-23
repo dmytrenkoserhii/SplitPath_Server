@@ -30,6 +30,9 @@ export class Story {
   })
   status: StoryStatus;
 
+  @Column({ type: 'int', nullable: true })
+  numberOfSegments: number;
+
   @ManyToOne(() => User, (user) => user.stories, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;

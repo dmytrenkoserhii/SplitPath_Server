@@ -28,10 +28,11 @@ export class StoriesService {
     page: number,
     limit: number,
     sort?: string,
+    status?: string,
   ): Promise<PaginatedResponse<Story>> {
     try {
       this.logger.debug(
-        `Fetching paginated stories for user ${userId} - Page: ${page}, Limit: ${limit}, Sort: ${sort || 'default'}`,
+        `Fetching paginated stories for user ${userId} - Page: ${page}, Limit: ${limit}, Sort: ${sort || 'default'}, Status: ${status || 'all'}`,
       );
 
       const queryBuilder = this.storyRepository
@@ -41,6 +42,10 @@ export class StoriesService {
         .where('user.id = :userId', { userId })
         .skip((page - 1) * limit)
         .take(limit);
+
+      if (status) {
+        queryBuilder.andWhere('story.status = :status', { status });
+      }
 
       if (sort) {
         const [field, direction] = sort.split(':');
@@ -87,17 +92,19 @@ export class StoriesService {
     }
   }
 
-  async create(createStoryDto: CreateStoryDto): Promise<Story> {
+  async create(createStoryDto: CreateStoryDto, sub: number): Promise<Story> {
     try {
-      const { topicId, userId, ...storyData } = createStoryDto;
-      this.logger.debug(`Creating new story for user ${userId} with topic ${topicId}`);
+      this.logger.debug(`Creating new story for user ${sub} with topic ${createStoryDto.topicId}`);
 
-      const topic = await this.storyTopicsService.findOneById(topicId);
+      const topic = await this.storyTopicsService.findOneById(createStoryDto.topicId);
+
+      const numberOfSegments = Math.floor(Math.random() * (12 - 10 + 1)) + 10;
 
       const story = this.storyRepository.create({
-        ...storyData,
+        title: createStoryDto.title,
         storyTopic: topic,
-        user: { id: userId },
+        user: { id: sub },
+        numberOfSegments,
       });
 
       const savedStory = await this.storyRepository.save(story);

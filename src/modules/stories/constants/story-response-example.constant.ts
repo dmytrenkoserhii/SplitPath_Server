@@ -13,4 +13,5 @@ export const STORY_RESPONSE_EXAMPLE: Story = {
   segments: [STORY_SEGMENT_RESPONSE_EXAMPLE],
   createdAt: new Date('2023-08-10T14:00:00Z'),
   updatedAt: new Date('2023-08-12T16:45:00Z'),
+  numberOfSegments: 11,
 };
