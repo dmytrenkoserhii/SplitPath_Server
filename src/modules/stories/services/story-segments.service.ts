@@ -69,6 +69,8 @@ export class StorySegmentsService {
         throw new BadRequestException(`Invalid choice "${updateDto.selectedChoice}" selected.`);
       }
 
+      Object.assign(segment, updateDto);
+
       const updatedSegment = await this.segmentRepository.save(segment);
       this.logger.log(`Story segment ${segmentId} updated successfully`);
 

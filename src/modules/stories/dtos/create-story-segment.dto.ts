@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Length } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString, Length } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -22,5 +22,5 @@ export class CreateStorySegmentDto {
   @ApiProperty({ description: 'Selected choice for this segment', required: false })
   @IsOptional()
   @IsString()
-  selectedChoice?: string;
+  selectedChoice?: string | null;
 }
