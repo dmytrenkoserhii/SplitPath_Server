@@ -11,6 +11,9 @@ import { CreateStoryDto, UpdateStoryDto } from '../dtos';
 import { Story, StoryField } from '../entities';
 import { StoryTopicsService } from './story-topics.service';
 
+const MIN_STORY_SEGMENTS = 10;
+const MAX_STORY_SEGMENTS = 12;
+
 @Injectable()
 export class StoriesService {
   private readonly logger = new Logger(StoriesService.name);
@@ -21,6 +24,12 @@ export class StoriesService {
     private readonly storyTopicsService: StoryTopicsService,
   ) {
     this.logger.log('Stories service initialized');
+  }
+
+  private generateRandomSegmentCount(): number {
+    return (
+      Math.floor(Math.random() * (MAX_STORY_SEGMENTS - MIN_STORY_SEGMENTS + 1)) + MIN_STORY_SEGMENTS
+    );
   }
 
   async findAllPaginated(
@@ -98,7 +107,7 @@ export class StoriesService {
 
       const topic = await this.storyTopicsService.findOneById(createStoryDto.topicId);
 
-      const numberOfSegments = Math.floor(Math.random() * (12 - 10 + 1)) + 10;
+      const numberOfSegments = this.generateRandomSegmentCount();
 
       const story = this.storyRepository.create({
         title: createStoryDto.title,

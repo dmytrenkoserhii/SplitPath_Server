@@ -22,5 +22,5 @@ export class CreateStorySegmentDto {
   @ApiProperty({ description: 'Selected choice for this segment', required: false })
   @IsOptional()
   @IsString()
-  selectedChoice?: string | null;
+  selectedChoice?: string;
 }

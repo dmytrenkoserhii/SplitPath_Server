@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { StorySegment, StoryTopic } from '@/modules/stories/entities';
+import { Story, StorySegment, StoryTopic } from '@/modules/stories/entities';
 import { StoryStatus } from '@/modules/stories/enums';
 import { ENV } from '@/shared/enums';
 import { ErrorHandler } from '@/shared/utils';
@@ -52,27 +52,22 @@ export class StoriesAIService {
     }
   }
 
-  async generateAndSaveNextSegment(
-    storyId: number,
-    topic: StoryTopic,
-    existingSegments: StorySegment[],
-    numberOfSegments: number,
-  ) {
+  async generateAndSaveNextSegment(story: Story) {
     try {
-      this.logger.debug(`Generating next segment for story ${storyId}`);
+      this.logger.debug(`Generating next segment for story ${story.id}`);
 
-      if (existingSegments.length === 0) {
+      if (!story.segments || story.segments.length === 0) {
         throw new Error('Cannot generate next segment without existing segments');
       }
 
-      if (!numberOfSegments || numberOfSegments <= 0) {
+      if (!story.numberOfSegments || story.numberOfSegments <= 0) {
         throw new Error('Invalid numberOfSegments value');
       }
 
       const generatedSegment = await this.generateNextSegment(
-        topic,
-        existingSegments,
-        numberOfSegments,
+        story.storyTopic,
+        story.segments,
+        story.numberOfSegments,
       );
       if (!generatedSegment) {
         throw new Error('Failed to generate next segment');
@@ -80,17 +75,16 @@ export class StoriesAIService {
 
       this.logger.debug('Saving generated next segment');
       const savedSegment = await this.storySegmentsService.create({
-        storyId,
+        storyId: story.id,
         text: generatedSegment.text,
         choices: generatedSegment.choices,
       });
 
-      this.logger.debug(`Next segment saved successfully for story ${storyId}`);
+      this.logger.debug(`Next segment saved successfully for story ${story.id}`);
 
-      const story = await this.storiesService.findOneById(storyId);
       if (story.status === StoryStatus.NEW) {
-        this.logger.debug(`Updating story ${storyId} status from NEW to IN_PROGRESS`);
-        await this.storiesService.update(storyId, { status: StoryStatus.IN_PROGRESS });
+        this.logger.debug(`Updating story ${story.id} status from NEW to IN_PROGRESS`);
+        await this.storiesService.update(story.id, { status: StoryStatus.IN_PROGRESS });
       }
 
       return savedSegment;
@@ -99,27 +93,22 @@ export class StoriesAIService {
     }
   }
 
-  async generateAndSaveFinalSegment(
-    storyId: number,
-    topic: StoryTopic,
-    existingSegments: StorySegment[],
-    numberOfSegments: number,
-  ) {
+  async generateAndSaveFinalSegment(story: Story) {
     try {
-      this.logger.debug(`Generating final segment for story ${storyId}`);
+      this.logger.debug(`Generating final segment for story ${story.id}`);
 
-      if (existingSegments.length === 0) {
+      if (!story.segments || story.segments.length === 0) {
         throw new Error('Cannot generate final segment without existing segments');
       }
 
-      if (!numberOfSegments || numberOfSegments <= 0) {
+      if (!story.numberOfSegments || story.numberOfSegments <= 0) {
         throw new Error('Invalid numberOfSegments value');
       }
 
       const generatedSegment = await this.generateFinalSegment(
-        topic,
-        existingSegments,
-        numberOfSegments,
+        story.storyTopic,
+        story.segments,
+        story.numberOfSegments,
       );
       if (!generatedSegment) {
         throw new Error('Failed to generate final segment');
@@ -127,15 +116,15 @@ export class StoriesAIService {
 
       this.logger.debug('Saving generated final segment');
       const savedSegment = await this.storySegmentsService.create({
-        storyId,
+        storyId: story.id,
         text: generatedSegment.text,
         choices: [],
       });
 
-      this.logger.debug(`Final segment saved successfully for story ${storyId}`);
+      this.logger.debug(`Final segment saved successfully for story ${story.id}`);
 
-      this.logger.debug(`Updating story ${storyId} status to FINISHED`);
-      await this.storiesService.update(storyId, { status: StoryStatus.FINISHED });
+      this.logger.debug(`Updating story ${story.id} status to FINISHED`);
+      await this.storiesService.update(story.id, { status: StoryStatus.FINISHED });
 
       return savedSegment;
     } catch (error: unknown) {

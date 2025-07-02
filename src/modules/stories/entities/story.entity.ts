@@ -30,7 +30,7 @@ export class Story {
   })
   status: StoryStatus;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int' })
   numberOfSegments: number;
 
   @ManyToOne(() => User, (user) => user.stories, { onDelete: 'CASCADE' })

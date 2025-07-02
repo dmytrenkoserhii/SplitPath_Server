@@ -135,12 +135,7 @@ export class StoriesController {
   })
   async generateNextSegment(@Param('id', ParseIntPipe) id: number): Promise<StorySegment> {
     const story = await this.storiesService.findOneById(id, ['storyTopic', 'segments']);
-    return this.storiesAiService.generateAndSaveNextSegment(
-      id,
-      story.storyTopic,
-      story.segments,
-      story.numberOfSegments,
-    );
+    return this.storiesAiService.generateAndSaveNextSegment(story);
   }
 
   @Post(':id/segments/generate-final')
@@ -151,11 +146,6 @@ export class StoriesController {
   })
   async generateFinalSegment(@Param('id', ParseIntPipe) id: number): Promise<StorySegment> {
     const story = await this.storiesService.findOneById(id, ['storyTopic', 'segments']);
-    return this.storiesAiService.generateAndSaveFinalSegment(
-      id,
-      story.storyTopic,
-      story.segments,
-      story.numberOfSegments,
-    );
+    return this.storiesAiService.generateAndSaveFinalSegment(story);
   }
 }
