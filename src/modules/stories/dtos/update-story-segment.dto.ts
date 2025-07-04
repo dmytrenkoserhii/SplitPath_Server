@@ -1,5 +1,10 @@
-import { PartialType } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
-import { CreateStorySegmentDto } from './create-story-segment.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateStorySegmentDto extends PartialType(CreateStorySegmentDto) {}
+export class UpdateStorySegmentDto {
+  @ApiProperty({ description: 'Selected choice for this segment', required: false })
+  @IsOptional()
+  @IsString()
+  selectedChoice?: string;
+}
