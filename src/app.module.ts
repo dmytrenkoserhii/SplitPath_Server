@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { FriendsModule } from './modules/friends/friends.module';
+import { GlobalChatModule } from './modules/glogal-chat/global-chat.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { StoriesModule } from './modules/stories/stories.module';
@@ -28,6 +29,7 @@ const ENVIRONMENT = process.env.NODE_ENV;
     FriendsModule,
     AuthModule,
     PaymentsModule,
+    GlobalChatModule,
   ],
 })
 export class AppModule {}
