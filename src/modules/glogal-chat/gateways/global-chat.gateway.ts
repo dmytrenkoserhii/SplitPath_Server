@@ -28,7 +28,6 @@ export class GlobalChatGateway implements OnGatewayConnection, OnGatewayDisconne
   @WebSocketServer()
   private server: Server<any, GlobalChatEmitEvents>;
   private readonly logger = new Logger(GlobalChatGateway.name);
-  private userSocketMap: Map<string, Socket> = new Map();
 
   constructor(private readonly globalChatService: GlobalChatService) {}
 
@@ -38,13 +37,11 @@ export class GlobalChatGateway implements OnGatewayConnection, OnGatewayDisconne
 
   handleConnection(@ConnectedSocket() client: Socket) {
     const userId = client.data.user.sub;
-    this.userSocketMap.set(userId.toString(), client);
     this.logger.log(`Client connected: ${userId}`);
   }
 
   handleDisconnect(@ConnectedSocket() client: Socket) {
     const userId = client.data.user.sub;
-    this.userSocketMap.delete(userId.toString());
     this.logger.log(`Client disconnected: ${userId}`);
   }
 

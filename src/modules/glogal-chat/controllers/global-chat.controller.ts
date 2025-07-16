@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Logger,
   ParseIntPipe,
   Post,
   Query,
@@ -13,6 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { CurrentSession } from '@/modules/auth/decorators';
 import { AccessTokenGuard } from '@/modules/auth/guards';
 import { PaginatedResponse } from '@/shared/types';
+import { WebSocketErrorHandler } from '@/shared/utils';
 
 import { CreateGlobalChatMessageDto } from '../dtos';
 import { GlobalChatMessage } from '../entities';
@@ -24,6 +26,8 @@ import { GlobalChatService } from '../services';
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard)
 export class GlobalChatController {
+  private readonly logger = new Logger(GlobalChatController.name);
+
   constructor(
     private readonly globalChatService: GlobalChatService,
     private readonly globalChatGateway: GlobalChatGateway,
@@ -54,7 +58,12 @@ export class GlobalChatController {
   ): Promise<GlobalChatMessage> {
     const message = await this.globalChatService.createMessage(sub, createMessageDto);
 
-    await this.globalChatGateway.notifyNewMessage(message);
+    WebSocketErrorHandler.handle(
+      () => this.globalChatGateway.notifyNewMessage(message),
+      'emit.newGlobalMessage',
+      sub,
+      this.logger,
+    );
 
     return message;
   }
