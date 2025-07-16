@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { UsersService } from '@/modules/users/services';
 import { PaginatedResponse } from '@/shared/types';
-import { ErrorHandler } from '@/shared/utils';
+import { ErrorHandler, createPaginatedResponse } from '@/shared/utils';
 
 import { CreateGlobalChatMessageDto } from '../dtos';
 import { GlobalChatMessage } from '../entities';
@@ -34,16 +34,7 @@ export class GlobalChatService {
         take: limit,
       });
 
-      return {
-        items: messages,
-        meta: {
-          total,
-          currentPage: page,
-          itemsPerPage: limit,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-        },
-      };
+      return createPaginatedResponse(messages, total, page, limit);
     } catch (error: unknown) {
       ErrorHandler.handle(error, this.logger, 'GlobalChatService.findAll');
     }

@@ -1,5 +1,14 @@
-import { Body, Controller, Get, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  ParseIntPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentSession } from '@/modules/auth/decorators';
 import { AccessTokenGuard } from '@/modules/auth/guards';
@@ -21,6 +30,11 @@ export class GlobalChatController {
   ) {}
 
   @Get('messages')
+  @ApiOperation({ summary: 'Get global chat messages with pagination' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns paginated global chat messages',
+  })
   async getMessages(
     @Query('page', ParseIntPipe) page = 1,
     @Query('limit', ParseIntPipe) limit = 20,
@@ -29,6 +43,11 @@ export class GlobalChatController {
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create new global chat message' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Global chat message created successfully',
+  })
   async createMessage(
     @CurrentSession('sub') sub: number,
     @Body() createMessageDto: CreateGlobalChatMessageDto,
