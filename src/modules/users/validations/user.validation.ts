@@ -8,4 +8,15 @@ export const USER_VALIDATIONS = {
     minLength: 3,
     maxLength: 32,
   },
+  firstName: {
+    minLength: 1,
+    maxLength: 50,
+  },
+  lastName: {
+    minLength: 1,
+    maxLength: 50,
+  },
+  bio: {
+    maxLength: 500,
+  },
 };

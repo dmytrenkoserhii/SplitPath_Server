@@ -20,6 +20,18 @@ export class Account {
   @Column({ nullable: true })
   avatarUrl: string;
 
+  @Column({ nullable: true })
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
+
+  @Column({ type: 'date', nullable: true })
+  birthDate: Date;
+
+  @Column({ type: 'text', nullable: true })
+  bio: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
