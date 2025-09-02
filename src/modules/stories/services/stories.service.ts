@@ -42,10 +42,13 @@ export class StoriesService {
         .leftJoinAndSelect('story.storyTopic', 'storyTopic')
         .where('user.id = :userId', { userId })
         .skip((page - 1) * limit)
-        .take(limit);
+        .take(limit)
+        .orderBy('story.createdAt', 'DESC');
 
       if (status) {
-        queryBuilder.andWhere('story.status = :status', { status });
+        const statuses = status.split(',');
+
+        queryBuilder.andWhere('story.status IN (:...statuses)', { statuses });
       }
 
       if (sort) {
