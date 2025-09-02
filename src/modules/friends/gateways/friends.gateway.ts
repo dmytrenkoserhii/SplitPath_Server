@@ -29,7 +29,7 @@ import { FriendsEmitEvents } from '../types';
 @WebSocketGateway({
   namespace: '/friends',
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, 'http://localhost:8081'],
     credentials: true,
   },
 })

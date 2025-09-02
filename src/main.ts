@@ -18,8 +18,15 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
 
+  // Parse CORS origins from comma-separated string
+  const corsOriginString = configService.get(ENV.CORS_ORIGIN, 'true');
+  const corsOrigin =
+    corsOriginString === 'true'
+      ? true
+      : corsOriginString.split(',').map((origin: string) => origin.trim());
+
   app.enableCors({
-    origin: configService.get(ENV.CORS_ORIGIN, true),
+    origin: corsOrigin,
     methods: configService.get(ENV.CORS_METHODS, 'GET,HEAD,POST,PUT,PATCH,DELETE'),
     allowedHeaders: configService.get(ENV.CORS_HEADERS, 'Content-Type,Accept,Authorization'),
     credentials: configService.get(ENV.CORS_CREDENTIALS, true),

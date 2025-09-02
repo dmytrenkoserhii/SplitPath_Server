@@ -19,7 +19,7 @@ import { GlobalChatEmitEvents } from '../types';
 @WebSocketGateway({
   namespace: 'global-chat',
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, 'http://localhost:8081'],
     credentials: true,
   },
 })
