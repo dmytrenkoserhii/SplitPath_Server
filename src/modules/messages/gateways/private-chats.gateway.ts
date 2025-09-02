@@ -22,7 +22,7 @@ import { MessageReadPayload, PrivateChatEmitEvents, TypingStatusChangePayload } 
 @WebSocketGateway({
   namespace: 'private-chats',
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, 'http://localhost:8081'],
     credentials: true,
   },
 })
