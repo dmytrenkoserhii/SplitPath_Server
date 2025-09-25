@@ -17,17 +17,29 @@ export class WsJwtGuard implements CanActivate {
     }
 
     const client: Socket = context.switchToWs().getClient();
-    const cookies = client.handshake.headers.cookie;
 
     try {
-      // Parse cookies string to get access token
-      const tokenCookie = cookies
-        ?.split(';')
-        .find((cookie) => cookie.trim().startsWith('access_token='));
-      const token = tokenCookie?.split('=')[1];
+      let token: string | undefined;
+
+      // First try to extract from cookies (for web clients)
+      const cookies = client.handshake.headers.cookie;
+      if (cookies) {
+        const tokenCookie = cookies
+          ?.split(';')
+          .find((cookie) => cookie.trim().startsWith('access_token='));
+        token = tokenCookie?.split('=')[1];
+      }
+
+      // If no cookie found, try Authorization header (for mobile/API clients)
+      if (!token) {
+        const authHeader = client.handshake.headers.authorization;
+        if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+          token = authHeader.substring(7);
+        }
+      }
 
       if (!token) {
-        Logger.warn('No access token found in cookies');
+        Logger.warn('No access token found in cookies or Authorization header');
         return false;
       }
 
@@ -41,24 +53,34 @@ export class WsJwtGuard implements CanActivate {
 
       return true;
     } catch (err) {
-      // TODO: Handle error
       Logger.error(`WebSocket authentication failed: ${err}`);
       return false;
     }
   }
 
   public static verify(client: Socket) {
-    const cookies = client.handshake.headers.cookie;
-
     try {
-      // Parse cookies string to get access token
-      const tokenCookie = cookies
-        ?.split(';')
-        .find((cookie) => cookie.trim().startsWith('access_token='));
-      const token = tokenCookie?.split('=')[1];
+      let token: string | undefined;
+
+      // First try to extract from cookies (for web clients)
+      const cookies = client.handshake.headers.cookie;
+      if (cookies) {
+        const tokenCookie = cookies
+          ?.split(';')
+          .find((cookie) => cookie.trim().startsWith('access_token='));
+        token = tokenCookie?.split('=')[1];
+      }
+
+      // If no cookie found, try Authorization header (for mobile/API clients)
+      if (!token) {
+        const authHeader = client.handshake.headers.authorization;
+        if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+          token = authHeader.substring(7);
+        }
+      }
 
       if (!token) {
-        Logger.warn('No access token found in cookies');
+        Logger.warn('No access token found in cookies or Authorization header');
         return false;
       }
 
