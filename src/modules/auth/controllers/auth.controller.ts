@@ -31,8 +31,15 @@ export class AuthController {
   @Post('sign-up')
   public async signUp(@Body() signUpDto: SignUpDto, @Res({ passthrough: true }) res: Response) {
     const signUpResult = await this.authService.signUp(signUpDto);
+
+    // Set cookies for web clients
     this.authService.setAuthCookies(res, signUpResult.tokens);
-    return { user: signUpResult.user };
+
+    // Return tokens in response body for mobile/API clients (they can ignore if using cookies)
+    return {
+      user: signUpResult.user,
+      tokens: signUpResult.tokens,
+    };
   }
 
   @ApiOperation({ summary: 'Sign in an existing user' })
@@ -43,8 +50,15 @@ export class AuthController {
   @Post('sign-in')
   public async signIn(@Body() signInDto: SignInDto, @Res({ passthrough: true }) res: Response) {
     const signInResult = await this.authService.signIn(signInDto);
+
+    // Set cookies for web clients
     this.authService.setAuthCookies(res, signInResult.tokens);
-    return { user: signInResult.user };
+
+    // Return tokens in response body for mobile/API clients (they can ignore if using cookies)
+    return {
+      user: signInResult.user,
+      tokens: signInResult.tokens,
+    };
   }
 
   @ApiOperation({ summary: 'Refresh access and refresh tokens' })
@@ -57,8 +71,15 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshResult = await this.tokensService.refreshTokens(session.sub, session.refreshToken);
+
+    // Set cookies for web clients
     this.authService.setAuthCookies(res, refreshResult.tokens);
-    return { user: refreshResult.user };
+
+    // Return tokens in response body for mobile/API clients (they can ignore if using cookies)
+    return {
+      user: refreshResult.user,
+      tokens: refreshResult.tokens,
+    };
   }
 
   @ApiOperation({ summary: 'Logout the current user' })
